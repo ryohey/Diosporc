@@ -1,0 +1,166 @@
+@charset="utf-8";
+
+body {
+  font-family: "Consolas";
+  font-size: 85%;
+  -webkit-font-smoothing: antialiased;
+  background: rgb(245, 244, 244);
+}
+
+.frame>.subframes {
+  background: white;
+}
+
+p {
+  margin: 0;
+}
+
+body {
+  margin: 0;
+}
+
+.inner-frame {
+  border-bottom: 1px solid rgb(228, 226, 226);
+}
+
+.frame>.subframes, .inner-frame {
+  min-height: 1em;
+  clear: both;
+  position: relative;
+  overflow: hidden;
+}
+
+.frame>.name {
+  width: 100%;
+}
+
+.frame {
+  position: absolute;
+  margin: 2em;
+  width: 13em;
+  background: rgb(235, 236, 236);
+  border: 1px solid rgb(222, 222, 222);
+}
+
+.inner-frame:last-child {
+  border-bottom: none;
+}
+
+.frame .name, .frame .value {
+  padding: 0.25em 0.5em;
+  -webkit-appearance: none;
+  border: none;
+  background: none;
+  box-sizing: border-box;
+  width: 50%;
+  margin: 0;
+  display: block;
+  float: left;
+}
+
+input:first-line {
+  display: inline-block;
+}
+
+.value {
+  color: rgb(162, 162, 162);
+}
+
+.button {
+  border-radius: 2px;
+  color: white;
+  background: gray;
+  padding: 0.25em 0.5em;
+  font-size: 1.2em;
+  margin: 2em;
+  cursor: pointer;
+}
+
+.button.run {
+  background: rgb(0, 218, 67);
+}
+
+.button:hover {
+  opacity: 0.5;
+}
+
+.arrow {
+  content: "";
+  display: block;
+  position: absolute;
+  top: 0.4em;
+  height: 0;
+  border-style: solid;
+}
+
+.extern-none .arrow.in,
+.extern-none .arrow.out {
+  opacity: 0;
+}
+
+.extern-readwrite .arrow.in,
+.extern-readwrite .arrow.out {
+  opacity: 1.0;
+}
+
+.extern-read .arrow.in {
+  opacity: 0;
+}
+
+.extern-read .arrow.out {
+  opacity: 1.0;
+}
+
+.extern-write .arrow.in {
+  opacity: 1.0;
+}
+
+.extern-write .arrow.out {
+  opacity: 0;
+}
+
+.arrow.in {
+  left: 0;
+  width: 0;
+  border-width: 0.5em 0 0.5em 0.4em;
+  border-color: rgba(0, 0, 0, 0) rgba(0, 0, 0, 0) rgba(0, 0, 0, 0) rgb(162, 162, 162);
+}
+
+.arrow.out {
+  right: 0;
+  top: 0.4em;
+  border-width: 0.5em 0.4em 0.5em 0;
+  border-color: rgba(0, 0, 0, 0) rgb(162, 162, 162) rgba(0, 0, 0, 0) rgba(0, 0, 0, 0);
+}
+
+
+.func {
+  display: inline-block;
+  position: absolute;
+}
+
+.func .dot {
+  width: 1em;
+  height: 1em;
+  border: 1px solid rgb(128, 128, 128);
+  background: white;
+  border-radius: 1em;
+}
+
+canvas#canvas {
+  width: 960px;
+  height: 640px;
+  position: absolute;
+  z-index: -100;
+  top: 0;
+}
+
+div#machine {
+}
+
+div#toolbar {
+    clear: both;
+    overflow: hidden;
+    padding: 1em;
+    background: #E4E4E4;
+}
