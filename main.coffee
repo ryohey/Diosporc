@@ -1,166 +1,291 @@
 width = 960
 height = 500
+GRID_SIZE = 20
+FRAME_EDGE_SIZE = 3
+FUNC_RADIUS = GRID_SIZE / 3
 
 $ = (q) -> document.querySelector(q)
 canvas = document.getElementById "canvas"
 ctx = canvas.getContext "2d"
 
-createElement = (html, className) ->
-  range = document.createRange()
-  elem = range.createContextualFragment(html).firstChild
-  elem.classList.add className
-  elem.setAttribute "pm_original", html
-  elem
+class Point
+  constructor: (x, y) ->
+    @x = x
+    @y = y
 
-$getJSON = (url, success, error = (e) -> console.error e) ->
-  request = new XMLHttpRequest()
-  request.open("GET", url, true)
+  add = (v) ->
+    if v instanceof Point
+      new Point(@x + v.x, @y + v.y)
+    else
+      new Point(@x + v, @y + v)
 
-  request.onload = ->
-    if request.status < 200 or request.status >= 400
-      error "unknown error"
-      return
-    success(JSON.parse(request.responseText))
+  sub = (v) ->
+    if v instanceof Point
+      new Point(@x - v.x, @y - v.y)
+    else
+      new Point(@x - v, @y - v)
 
-  request.onerror = error
-  request.send()
+  roundGrid: ->
+    new Point(roundGrid(@x), roundGrid(@y))
 
-# query: 親を指定するクエリ
-# className: 更新する要素を特定するクラス名
-$u = (query, className, html, position = {x: 0, y: 0}) ->
-  parent = $(query)
-  return console.error "#{query} is not found" unless parent
-  elem = parent?.querySelector ".#{className}"
-  # 更新する必要がなければ何もしない
-  return if elem?.getAttribute("pm_original") is html
-  parent.removeChild elem if elem?
-  elem = createElement(html, className)
-  elem.setAttribute "style", "left: #{position.x}px; top: #{position.y}px;"
-  parent.appendChild elem
+class Size
+  constructor: (width, height) ->
+    @width = width
+    @height = height
 
-getCenter = (query, direction = "left") ->
-  e = document.querySelector(query).getBoundingClientRect()
-  {
-    x: if direction is "left" then e.left else e.right
-    y: e.top + e.height / 2
-  }
+  @fromPoint = (point) ->
+    new Size(point.x, point.y)
 
-sortNear = (a, b, toPoint) ->
-  r1 = Math.pow(toPoint.x - a.x, 2) + Math.pow(toPoint.y - a.y, 2)
-  r2 = Math.pow(toPoint.x - b.x, 2) + Math.pow(toPoint.y - b.y, 2)
-  if r1 < r2 then [a, b] else [b, a]
+class Rect
+  constructor: (x, y, width, height) ->
+    @x = x
+    @y = y
+    @width = width
+    @height = height
 
-drawLine = (from, to, lineWidth = 2, strokeStyle = "gray") ->
-  ctx.lineWidth = lineWidth
-  ctx.strokeStyle = strokeStyle
+  @fromPoint = (point, size) ->
+    new Rect(point.x, point.y, size.width, size.height)
 
-  c = 
-    x: (to.x + from.x) / 2
-    y: (to.y + from.y) / 2
+  inset: (dx, dy) ->
+    new Rect(@x - dx, @y - dy, @width + dx, @height + dy)    
 
-  h = Math.min(Math.abs(to.x - from.x), 
-               Math.abs(to.y - from.y)) / 2
+  contains: (point) ->
+    (point.x >= @x and
+     point.y >= @y and
+     point.x <= @x + @width and
+     point.y <= @y + @height)
 
-  sign = (a) -> a / Math.abs(a)
+  setPoint: (point) ->
+    @x = point.x
+    @y = point.y
 
-  mid1 = 
-    x: c.x - h * sign(c.x - from.x)
-    y: c.y - h * sign(c.y - from.y)
-  
-  mid2 = 
-    x: c.x + h * sign(to.x - c.x)
-    y: c.y + h * sign(to.y - c.y)
+  setSize: (size) ->
+    @width = size.width
+    @height = size.height
 
-  ctx.beginPath();
-  ctx.moveTo from.x, from.y
-  ctx.lineTo mid1.x, mid1.y
-  ctx.lineTo mid2.x, mid2.y
-  ctx.lineTo to.x, to.y
+  normalize = (f) ->
+    if @width < 0
+      @x = @x - @width
+      @width *= -1
+
+    if @height < 0
+      @y = @y - @height
+      @height *= -1
+
+CanvasRenderingContext2D.prototype.gridPath = (gridSize, width, height) ->
+  for dx in [0..width / gridSize]
+    x = dx * gridSize + 0.5
+    @moveTo x, 0
+    @lineTo x, height
+
+  for dy in [0..height / gridSize]
+    y = dy * gridSize + 0.5
+    @moveTo 0, y
+    @lineTo width, y
+
+drawGrid = ->
+  ctx.beginPath()
+  ctx.lineWidth = 1
+  ctx.strokeStyle = "rgba(0, 0, 0, 0.1)"
+  ctx.gridPath GRID_SIZE, width, height
   ctx.stroke()
 
-last = (arr) -> arr[arr.length - 1]
+drawFunc = (pos, style = "rgba(0, 0, 0, 0.4)") ->
+  ctx.beginPath()
+  ctx.arc pos.x + 0.5, pos.y + 0.5, FUNC_RADIUS, 0, 2 * Math.PI
+  ctx.lineWidth = 2
+  ctx.strokeStyle = style
+  ctx.stroke()
 
-updateScriptOutput = (frame) ->
-  return unless frame?
-  isEmpty = (str) ->
-    return true unless str?
-    return str.length is 0
+drawFrame = (rect, style = "rgba(0, 0, 0, 0.4)") ->
+  ctx.beginPath()
+  ctx.rect rect.x + 0.5, rect.y + 0.5, 
+           rect.width,   rect.height
+  ctx.lineWidth = 2
+  ctx.strokeStyle = style
+  ctx.stroke()
 
-  return unless frame.script?
-  param1 = getFrameValue(frame.subframes[0].id)
-  param2 = getFrameValue(frame.subframes[1].id)
-  return if isEmpty(param1.length) or isEmpty(param2)
+drawFrames = ->
+  drawFrame f for f in frames
 
-  # TODO: 引数の数の違いに対応する
-  out = eval "(#{frame.script})(#{param1}, #{param2})"
+drawFuncs = ->
+  drawFunc f for f in funcs
 
-  outId = last(frame.subframes).id
-  updateValue outId, out
+redraw = ->
+  rect = canvas.getBoundingClientRect()
+  ctx.clearRect 0, 0, rect.width, rect.height
+  drawGrid()
+  drawFrames()
+  drawFuncs()
 
-updateValue = (id, value) ->
-  return unless id?
-  input = getFrameValueInput(id)
-  oldValue = Number input.value
-  if Number value isnt oldValue
-    input.value = value
-    onInput getFrameValueInput(id)
+frames = []
+funcs = []
 
-onInput = (input) ->
-  id = input.getAttribute "frame-id"
-  type = input.getAttribute "class"
-  return if type isnt "value"
-  destId = data.edges[id]
-  updateValue destId, input.value
-  updateScriptOutput getParent(id)
+redraw()
 
-getFrameNameInput = (id) -> $(".frame-#{id} input.name")
-getFrameValueInput = (id) -> $(".frame-#{id} input.value")
-getFrameValue = (id) -> getFrameValueInput(id).value
+DragState = 
+  None: 0
+  Down: 1
+  Move: 2
 
-getParent = (id) ->
-  for frame in data.frames
-    for subframe in frame.subframes ? []
-      return frame if Number subframe.id is Number id
+TargetType =
+  None: 0
+  Frame: 10
+  FrameEdge: 11
+  Canvas: 20
+  Func: 30
+
+dragEvent = 
+  state: DragState.None
+  targetType: TargetType.None
+  target: null
+  moved: false
+  start: new Point(0, 0)
+  current: new Point(0, 0)
+
+# change cursor over canvas when dragging
+canvas.onselectstart = -> false
+
+getTarget = (pos) ->
+  frame = findFrameContainsPoint pos
+  func = findFuncContainsPoint pos
+
+  type = TargetType.None
+  target = null
+
+  if frame?
+    target = frame
+    if isFrameEdge pos, frame
+      type = TargetType.FrameEdge
+    else
+      type = TargetType.Frame
+  else if func?
+    type = TargetType.Func
+    target = func
+  else
+    type = TargetType.Canvas
+
+  [type, target]
+
+canvas.onmousedown = (e) ->
+  dragEvent.state = DragState.Down
+  dragEvent.start.x = roundGrid e.layerX
+  dragEvent.start.y = roundGrid e.layerY
+  [dragEvent.targetType, dragEvent.target] = getTarget dragEvent.start
+  true
+
+findFuncContainsPoint = (p) ->
+  for f in funcs
+    rect = Rect.fromPoint f.sub(FUNC_RADIUS),
+                          Size.fromPoint(f.add(FUNC_RADIUS))
+    if rect.contains p
+      return f
+
   return null
 
-createFrameElement = (frame) ->
-  onInputStr = "(function(input){onInput(input)})(this)"
-  children = (for subframe in frame.subframes ? [frame]
-    """
-    <div class="inner-frame frame-#{subframe.id} extern-#{subframe.extern ? "none"}">
-      <div class="arrow in"></div>
-      <div class="arrow out"></div>
-      <input type="text" frame-id="#{subframe.id}" value="#{subframe.name ? ""}" class="name" oninput="#{onInputStr}">
-      <input type="text" frame-id="#{subframe.id}" value="#{subframe.value ? ""}" class="value" oninput="#{onInputStr}">
-    </div>
-    """
+findFrameContainsPoint = (p, margin = FRAME_EDGE_SIZE) ->
+  for f in frames
+    if (f.inset(p, margin).contains p)
+      return f
+  return null
+
+# point, frame
+isFrameEdge = (p, f) ->
+  a = f.inset(p, FRAME_EDGE_SIZE).contains p
+  b = f.inset(p, -FRAME_EDGE_SIZE).contains p
+  a and not b
+
+addFunc = (x, y) ->
+  funcs.push new Point(x, y)
+
+addFrame = (dragEvent) ->
+  frames.push Rect.fromPoint(
+    dragEvent.start, 
+    Size.fromPoint(pointSub(dragEvent.current, dragEvent.start))
   )
-  """
-  <div class="frame">
-    <input type="text" value="#{frame.name ? ""}" class="name">
-    <div class="subframes">
-      #{children.join "\n"}
-    </div>
-  </div>
-  """
 
-data = {}
+canvas.onmouseup = (e) ->
+  switch dragEvent.state
+    when DragState.Down
+      # on click
+      addFunc new Point(e.layerX, e.layerY).roundGrid()
+    when DragState.Move
+      # finish dragging
+      switch dragEvent.targetType
+        when TargetType.Canvas
+          addFrame dragEvent
+        when TargetType.Frame
+          offset = pointSub dragEvent.target, dragEvent.start
+          targetPos = pointAdd dragEvent.current, offset
+          dragEvent.target.setPoint targetPos
+        when TargetType.FrameEdge
+          size = Size.fromPoint(pointSub(dragEvent.current,
+                                         dragEvent.target))
+          dragEvent.target.setSize size
+        when TargetType.Func
+          dragEvent.target.setSize dragEvent.current
+  redraw()
+  dragEvent.state = DragState.None  
 
-$getJSON "source.json", (json) ->
-  data = json
-  for frame in json.frames
-    $u("#machine", "frame-#{frame.id}", 
-      createFrameElement(frame),
-      json.layout[frame.id])
+drawFramePreview = (dragEvent) ->
+  size = Size.fromPoint pointSub(
+    dragEvent.current, 
+    dragEvent.start)
 
-  updateLines = () ->
-    canvasRect = canvas.getBoundingClientRect()
-    ctx.clearRect 0, 0, canvasRect.width, canvasRect.height
+  drawFrame Rect.fromPoint(dragEvent.start, size)
+  , "rgba(0, 0, 0, 0.2)"
 
-    for key, value of json.edges
-      from = getCenter ".frame-#{key}", "right"
-      to   = getCenter ".frame-#{value}", "left"
-      drawLine from, to, 1
+resizeFramePreview = (dragEvent) ->
+  size = Size.fromPoint pointSub(
+    dragEvent.current, 
+    dragEvent.target)
 
-  updateLines()
-  setInterval updateLines, 100
+  drawFrame Rect.fromPoint(dragEvent.target, size)
+  , "rgba(0, 0, 0, 0.2)"
+
+drawDragFramePreview = (dragEvent) ->
+  pos = pointAdd(
+    dragEvent.current, 
+    pointSub(dragEvent.target, dragEvent.start))
+
+  drawFrame Rect.fromPoint(pos, dragEvent.target)
+  , "rgba(0, 0, 0, 0.2)"
+
+drawDragFuncPreview = (dragEvent) ->
+  drawFunc dragEvent.current, "rgba(0, 0, 0, 0.2)"
+
+cursorForTargetType = (type) ->
+  console.log type
+  switch type
+    when TargetType.Canvas
+      "default"
+    when TargetType.Func
+      "move"
+    when TargetType.Frame
+      "move"
+    when TargetType.FrameEdge
+      "se-resize"
+
+canvas.onmousemove = (e) ->
+  pos = new Point(e.layerX, e.layerY)
+
+  #change cursor
+  if dragEvent.state is DragState.None
+    canvas.style.cursor = cursorForTargetType getTarget(pos)[0]
+    return 
+  else
+    canvas.style.cursor = cursorForTargetType dragEvent.targetType
+
+  dragEvent.state = DragState.Move
+  dragEvent.current = pos.roundGrid()
+
+  redraw()
+  switch dragEvent.targetType
+    when TargetType.Canvas
+      drawFramePreview dragEvent
+    when TargetType.Func
+      drawDragFuncPreview dragEvent
+    when TargetType.Frame
+      drawDragFramePreview dragEvent
+    when TargetType.FrameEdge
+      resizeFramePreview dragEvent

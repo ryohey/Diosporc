@@ -152,7 +152,7 @@ canvas#canvas {
   height: 640px;
   position: absolute;
   z-index: -100;
-  top: 0;
+  /* top: 0; */
 }
 
 div#machine {
