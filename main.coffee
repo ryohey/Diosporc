@@ -3,6 +3,8 @@ Point = require "./point.coffee"
 Size = require "./size.coffee"
 Rect = require "./rect.coffee"
 Machine = require "./machine.coffee"
+Node = require "./node.coffee"
+{Memory, Func} = require "./io.coffee"
 
 width = 960
 height = 500
@@ -13,6 +15,7 @@ MEMORY_COLS = Math.round(width / GRID_SIZE)
 MEMORY_ROWS = Math.round(height / GRID_SIZE)
 
 machine = new Machine MEMORY_COLS * MEMORY_ROWS
+document.machine = machine
 
 canvas = document.getElementById "canvas"
 ctx = canvas.getContext "2d"
@@ -25,7 +28,6 @@ createjs.Ticker.addEventListener "tick", (e) -> redraw()
 $ = (q) -> document.querySelector(q)
 
 frames = []
-funcs = []
 
 DragState = 
   None: 0
@@ -43,14 +45,10 @@ dragEvent =
   state: DragState.None
   targetType: TargetType.None
   target: null
+  button: 0
   moved: false
   start: new Point(0, 0)
   current: new Point(0, 0)
-
-addressFromPoint = (point) ->
-  p = point.sub(GRID_SIZE / 2).roundGrid()
-  (p.x / GRID_SIZE +
-   p.y / GRID_SIZE * MEMORY_COLS)
 
 CanvasRenderingContext2D.prototype.gridPath = (gridSize, width, height) ->
   for dx in [0..width / gridSize]
@@ -70,14 +68,22 @@ drawGrid = ->
   ctx.gridPath GRID_SIZE, width, height
   ctx.stroke()
 
-highlightMemory = (index) ->
+pointToIndex = (point) ->
+  p = point.sub(GRID_SIZE / 2).roundGrid()
+  (p.x / GRID_SIZE +
+   p.y / GRID_SIZE * MEMORY_COLS)
+
+indexToPoint = (index) ->
   dy = Math.floor(index / MEMORY_COLS)
   dx = index - dy * MEMORY_COLS
-  x = dx * GRID_SIZE
-  y = dy * GRID_SIZE
+  new Point dx * GRID_SIZE,
+            dy * GRID_SIZE
+
+highlightMemory = (index) ->
+  pos = indexToPoint index
 
   rect = new createjs.Shape()
-  rect.graphics.beginFill("rgba(255, 0, 0, 0.2)").drawRect x, y, GRID_SIZE, GRID_SIZE
+  rect.graphics.beginFill("rgba(255, 0, 0, 0.2)").drawRect pos.x, pos.y, GRID_SIZE, GRID_SIZE
   stage.addChild rect
   createjs.Tween.get rect
     .to { alpha: 0 }, 500, createjs.Ease.getPowInOut(2)
@@ -89,7 +95,7 @@ machine.onMemoryUpdated = (index, value) ->
 count = 0
 
 setInterval ->
-  machine.setMemory 0, count++
+  machine.memory.setInput 0, count++
 , 1000
 
 drawMemory = ->
@@ -101,7 +107,7 @@ drawMemory = ->
   ctx.textAlign = "center"
   for x in [0..MEMORY_COLS - 1]
     for y in [0..MEMORY_ROWS - 1]
-      value = machine.getMemory(x + y * MEMORY_COLS)
+      value = machine.memory.getOutput(x + y * MEMORY_COLS)
       ctx.fillText "#{value}", 
                    (x + 0.5) * GRID_SIZE, 
                    (y + 0.5) * GRID_SIZE + lineHeight / 2, 
@@ -122,14 +128,67 @@ drawFrame = (rect, style = "rgba(0, 0, 0, 0.4)") ->
   ctx.strokeStyle = style
   ctx.stroke()
 
+drawLink = (from, to, style = "rgba(0, 0, 0, 0.4)") ->
+  ctx.beginPath()
+  ctx.moveTo from.x, from.y
+  ctx.lineTo to.x, to.y
+  ctx.lineWidth = 2
+  ctx.strokeStyle = style
+  ctx.stroke()
+
+  arrowWidth = 5
+  arrowHeight = 12
+  ctx.beginPath()
+  ctx.moveTo from.x - arrowWidth, from.y - arrowHeight / 2
+  ctx.lineTo from.x - arrowWidth, from.y + arrowHeight / 2
+  ctx.lineTo from.x, from.y
+  ctx.closePath()
+  ctx.fillStyle = style
+  ctx.fill()
+
+  ctx.beginPath()
+  ctx.moveTo to.x, to.y - arrowHeight / 2
+  ctx.lineTo to.x, to.y + arrowHeight / 2
+  ctx.lineTo to.x + arrowWidth, to.y
+  ctx.closePath()
+  ctx.fillStyle = style
+  ctx.fill()
+
 drawFrames = ->
   drawFrame f for f in frames
 
 drawFuncs = ->
-  drawFunc f for f in funcs
+  drawFunc f for f in machine.funcs
+
+nodeToPoint = (node, direction = "left") ->
+  switch node.type
+    when Node.Type.Memory
+      p = indexToPoint(node.indexes[0])
+      if direction is "right"
+        p.x += GRID_SIZE
+      p.y += GRID_SIZE / 2
+    when Node.Type.Func
+      func = machine.funcs[node.indexes[0]]
+      p = func.copy()
+      if direction is "left"
+        p.x -= FUNC_RADIUS
+      else if direction is "right"
+        p.x += FUNC_RADIUS
+  p
+
+drawLinks = ->
+  for key, value of machine.links
+    fromNode = Node.fromString key
+    from = nodeToPoint fromNode, "right"
+    for toNode in value
+      to = nodeToPoint toNode, "left"
+      drawLink from, to
 
 drawDrag = ->
   return if dragEvent?.state isnt DragState.Move
+  if dragEvent.button isnt 0
+    drawLinkPreview dragEvent
+    return
   switch dragEvent.targetType
     when TargetType.Canvas
       drawFramePreview dragEvent
@@ -148,10 +207,8 @@ redraw = ->
   drawMemory()
   drawFrames()
   drawFuncs()
+  drawLinks()
   drawDrag()
-
-# change cursor over canvas when dragging
-canvas.onselectstart = -> false
 
 getTarget = (pos) ->
   frame = findFrameContainsPoint pos
@@ -175,7 +232,7 @@ getTarget = (pos) ->
   [type, target]
 
 findFuncContainsPoint = (p) ->
-  _.find funcs, (f) ->
+  _.find machine.funcs, (f) ->
     rect = Rect.fromPoint f.sub(FUNC_RADIUS),
                           new Size(FUNC_RADIUS * 2, FUNC_RADIUS * 2)
     rect.contains p
@@ -190,11 +247,17 @@ isFrameEdge = (p, f) ->
   b = f.inset(FRAME_EDGE_SIZE, FRAME_EDGE_SIZE).contains p
   a and not b
 
-addFunc = (point) ->
-  funcs.push point
-
 addFrame = (rect) ->
   frames.push rect
+
+addFuncLink = (memoryIndex, funcIndex) ->
+  funcLinks[memoryIndex] ?= []
+  funcLinks[memoryIndex].push funcIndex
+
+drawLinkPreview = (dragEvent) ->
+  drawLink dragEvent.start, 
+           dragEvent.current,
+           "rgba(0, 0, 0, 0.2)"
 
 drawFramePreview = (dragEvent) ->
   size = Size.fromPoint dragEvent.current.sub(dragEvent.start)
@@ -228,51 +291,77 @@ cursorForTargetType = (type) ->
     when TargetType.FrameEdge
       "se-resize"
 
+# change cursor over canvas when dragging
+canvas.onselectstart = -> false
+
 canvas.onmousedown = (e) ->
+  console.log "[onmousedown] button: #{e.button}, type: #{dragEvent.targetType}"
   pos = new Point(e.layerX, e.layerY)
 
   dragEvent.state = DragState.Down
+  dragEvent.button = e.button
   dragEvent.start = pos
   [dragEvent.targetType, dragEvent.target] = getTarget pos
-  console.log "[onmousedown] type: #{dragEvent.targetType}"
   true
 
 canvas.onmousemove = (e) ->
+  console.log "[onmousemove] button: #{e.button}, type: #{dragEvent.targetType}"
   pos = new Point(e.layerX, e.layerY)
 
   #change cursor
   if dragEvent.state is DragState.None
     canvas.style.cursor = cursorForTargetType getTarget(pos)[0]
     return 
-  else
+  else if e.button is 0 # left click
     canvas.style.cursor = cursorForTargetType dragEvent.targetType
+  else
+    canvas.style.cursor = "default"
 
   dragEvent.state = DragState.Move
   dragEvent.current = pos
 
+nodeFromPoint = (point) ->
+  [type, target] = getTarget point
+  switch type 
+    when TargetType.Canvas
+      new Node Node.Type.Memory, [pointToIndex(point)]
+    when TargetType.Frame
+      new Node Node.Type.Memory, [pointToIndex(point)]
+    when TargetType.Func
+      new Node Node.Type.Func, [machine.funcs.indexOf(target), 0]
+
 canvas.onmouseup = (e) ->
-  switch dragEvent.state
-    when DragState.Down
-      # on click
-      switch dragEvent.targetType
-        when TargetType.Canvas
-          addFunc new Point(e.layerX, e.layerY).roundGrid()
-    when DragState.Move
-      # finish dragging
-      switch dragEvent.targetType
-        when TargetType.Canvas
-          addFrame Rect.fromPoint(
-            dragEvent.start.roundGrid(), 
-            Size.fromPoint(dragEvent.current.sub(dragEvent.start).roundGrid())
-          )
-        when TargetType.Frame
-          offset = dragEvent.target.point().sub dragEvent.start
-          targetPos = dragEvent.current.add offset
-          dragEvent.target.setPoint targetPos.roundGrid()
-        when TargetType.FrameEdge
-          size = Size.fromPoint dragEvent.current.sub(dragEvent.target.point()).roundGrid()
-          dragEvent.target.setSize size
-        when TargetType.Func
-          dragEvent.target.copyFrom dragEvent.current.roundGrid()
-  redraw()
+  if e.button is 0
+    switch dragEvent.state
+      when DragState.Down
+        # on click
+        switch dragEvent.targetType
+          when TargetType.Canvas
+            func = new Func(new Point(e.layerX, e.layerY).roundGrid())
+            machine.addFunc func
+      when DragState.Move
+        # finish dragging
+        switch dragEvent.targetType
+          when TargetType.Canvas
+            addFrame Rect.fromPoint(
+              dragEvent.start.roundGrid(), 
+              Size.fromPoint(dragEvent.current.sub(dragEvent.start).roundGrid())
+            )
+          when TargetType.Frame
+            offset = dragEvent.target.point().sub dragEvent.start
+            targetPos = dragEvent.current.add offset
+            dragEvent.target.setPoint targetPos.roundGrid()
+          when TargetType.FrameEdge
+            size = Size.fromPoint dragEvent.current.sub(dragEvent.target.point()).roundGrid()
+            dragEvent.target.setSize size
+          when TargetType.Func
+            dragEvent.target.copyFrom dragEvent.current.roundGrid()
+  else if e.button is 2
+    from = nodeFromPoint dragEvent.start
+    to   = nodeFromPoint dragEvent.current
+    machine.addLink from, to
+
   dragEvent.state = DragState.None  
+
+# do not show context menu on canvas
+canvas.oncontextmenu = (e) -> e.preventDefault()

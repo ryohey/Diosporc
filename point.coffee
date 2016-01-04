@@ -27,4 +27,6 @@ class Point
     @x = point.x
     @y = point.y
 
+  copy: -> new Point(@x, @y)
+
 module.exports = Point
