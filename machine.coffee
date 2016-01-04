@@ -1,8 +1,8 @@
 {Memory, Func} = require "./io.coffee"
 
 class Machine
-  constructor: (size) ->
-    @memory = new Memory(size)
+  constructor: (width, height) ->
+    @memory = new Memory(width, height)
     @memory.onOutputChanged = @onMemoryOutputChanged
     @funcs = []
 

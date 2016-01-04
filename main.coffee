@@ -14,7 +14,7 @@ FUNC_RADIUS = GRID_SIZE / 3
 MEMORY_COLS = Math.round(width / GRID_SIZE)
 MEMORY_ROWS = Math.round(height / GRID_SIZE)
 
-machine = new Machine MEMORY_COLS * MEMORY_ROWS
+machine = new Machine width, height
 document.machine = machine
 
 canvas = document.getElementById "canvas"
@@ -61,17 +61,6 @@ CanvasRenderingContext2D.prototype.gridPath = (gridSize, width, height, startX =
     y = dy * gridSize + 0.5 + startY
     @moveTo startX, y
     @lineTo startX + width, y
-
-pointToIndex = (point) ->
-  p = point.sub(GRID_SIZE / 2).roundGrid()
-  (p.x / GRID_SIZE +
-   p.y / GRID_SIZE * MEMORY_COLS)
-
-indexToPoint = (index) ->
-  dy = Math.floor(index / MEMORY_COLS)
-  dx = index - dy * MEMORY_COLS
-  new Point dx * GRID_SIZE,
-            dy * GRID_SIZE
 
 count = 0
 
