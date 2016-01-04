@@ -321,7 +321,6 @@ cursorForTargetType = (type) ->
 canvas.onselectstart = -> false
 
 canvas.onmousedown = (e) ->
-  console.log "[onmousedown] button: #{e.button}, type: #{dragEvent.targetType}"
   pos = new Point(e.layerX, e.layerY)
 
   dragEvent.state = DragState.Down
@@ -331,8 +330,9 @@ canvas.onmousedown = (e) ->
   true
 
 canvas.onmousemove = (e) ->
-  console.log "[onmousemove] button: #{e.button}, type: #{dragEvent.targetType}"
   pos = new Point(e.layerX, e.layerY)
+
+  console.log machine.portContainsPoint pos
 
   #change cursor
   if dragEvent.state is DragState.None
