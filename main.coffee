@@ -1,6 +1,6 @@
 width = 960
 height = 500
-GRID_SIZE = 20
+GRID_SIZE = 24
 FRAME_EDGE_SIZE = 3
 FUNC_RADIUS = GRID_SIZE / 3
 
@@ -49,6 +49,7 @@ class Rect
     @y = y
     @width = width
     @height = height
+    @normalize()
 
   point: -> new Point(@x, @y)
   size: -> new Size(@width, @height)
@@ -72,15 +73,22 @@ class Rect
   setSize: (size) ->
     @width = size.width
     @height = size.height
+    @normalize()
 
-  normalize = (f) ->
+  normalize: ->
     if @width < 0
-      @x = @x - @width
+      @x += @width
       @width *= -1
 
     if @height < 0
-      @y = @y - @height
+      @y += @height
       @height *= -1
+
+    if @width is 0
+      @width = GRID_SIZE
+
+    if @height is 0
+      @height = GRID_SIZE
 
 CanvasRenderingContext2D.prototype.gridPath = (gridSize, width, height) ->
   for dx in [0..width / gridSize]
@@ -177,14 +185,6 @@ getTarget = (pos) ->
 
   [type, target]
 
-canvas.onmousedown = (e) ->
-  dragEvent.state = DragState.Down
-  dragEvent.start.x = roundGrid e.layerX
-  dragEvent.start.y = roundGrid e.layerY
-  [dragEvent.targetType, dragEvent.target] = getTarget dragEvent.start
-  console.log "[onmousedown] type: #{dragEvent.targetType}"
-  true
-
 findFuncContainsPoint = (p) ->
   _.find funcs, (f) ->
     rect = Rect.fromPoint f.sub(FUNC_RADIUS),
@@ -206,34 +206,6 @@ addFunc = (point) ->
 
 addFrame = (rect) ->
   frames.push rect
-
-canvas.onmouseup = (e) ->
-  console.log "[onmouseup] state: #{dragEvent.state}"
-  switch dragEvent.state
-    when DragState.Down
-      # on click
-      switch dragEvent.targetType
-        when TargetType.Canvas
-          addFunc new Point(e.layerX, e.layerY).roundGrid()
-    when DragState.Move
-      # finish dragging
-      switch dragEvent.targetType
-        when TargetType.Canvas
-          addFrame Rect.fromPoint(
-            dragEvent.start, 
-            Size.fromPoint(dragEvent.current.sub dragEvent.start)
-          )
-        when TargetType.Frame
-          offset = dragEvent.target.point().sub dragEvent.start
-          targetPos = dragEvent.current.add offset
-          dragEvent.target.setPoint targetPos
-        when TargetType.FrameEdge
-          size = Size.fromPoint(dragEvent.current.sub dragEvent.target.point())
-          dragEvent.target.setSize size
-        when TargetType.Func
-          dragEvent.target.copyFrom dragEvent.current
-  redraw()
-  dragEvent.state = DragState.None  
 
 drawFramePreview = (dragEvent) ->
   size = Size.fromPoint dragEvent.current.sub(dragEvent.start)
@@ -267,6 +239,15 @@ cursorForTargetType = (type) ->
     when TargetType.FrameEdge
       "se-resize"
 
+canvas.onmousedown = (e) ->
+  pos = new Point(e.layerX, e.layerY)
+
+  dragEvent.state = DragState.Down
+  dragEvent.start = pos.roundGrid()
+  [dragEvent.targetType, dragEvent.target] = getTarget pos
+  console.log "[onmousedown] type: #{dragEvent.targetType}"
+  true
+
 canvas.onmousemove = (e) ->
   pos = new Point(e.layerX, e.layerY)
 
@@ -290,3 +271,30 @@ canvas.onmousemove = (e) ->
       drawDragFramePreview dragEvent
     when TargetType.FrameEdge
       resizeFramePreview dragEvent
+
+canvas.onmouseup = (e) ->
+  switch dragEvent.state
+    when DragState.Down
+      # on click
+      switch dragEvent.targetType
+        when TargetType.Canvas
+          addFunc new Point(e.layerX, e.layerY).roundGrid()
+    when DragState.Move
+      # finish dragging
+      switch dragEvent.targetType
+        when TargetType.Canvas
+          addFrame Rect.fromPoint(
+            dragEvent.start, 
+            Size.fromPoint(dragEvent.current.sub dragEvent.start)
+          )
+        when TargetType.Frame
+          offset = dragEvent.target.point().sub dragEvent.start
+          targetPos = dragEvent.current.add offset
+          dragEvent.target.setPoint targetPos
+        when TargetType.FrameEdge
+          size = Size.fromPoint(dragEvent.current.sub dragEvent.target.point())
+          dragEvent.target.setSize size
+        when TargetType.Func
+          dragEvent.target.copyFrom dragEvent.current
+  redraw()
+  dragEvent.state = DragState.None  
