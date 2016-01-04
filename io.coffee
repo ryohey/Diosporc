@@ -31,7 +31,9 @@ class Memory # implements IO
     @ports = _.flatten(
       for x in [0..MEMORY_COLS - 1]
         for y in [0..MEMORY_ROWS - 1]
-          new Port(new Rect(x * GRID_SIZE, y * GRID_SIZE, GRID_SIZE, GRID_SIZE), true, true)
+          p = new Port(new Rect(x * GRID_SIZE, y * GRID_SIZE, GRID_SIZE, GRID_SIZE), true, true)
+          p.setValue 0
+          p
     )
     
   setInput: (index, value) -> 

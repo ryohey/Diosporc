@@ -60,14 +60,7 @@ CanvasRenderingContext2D.prototype.gridPath = (gridSize, width, height, startX =
     y = dy * gridSize + 0.5 + startY
     @moveTo startX, y
     @lineTo startX + width, y
-
-drawGrid = ->
-  ctx.beginPath()
-  ctx.lineWidth = 1
-  ctx.strokeStyle = "rgba(0, 0, 0, 0.1)"
-  ctx.gridPath GRID_SIZE, width, height
-  ctx.stroke()
-
+    
 pointToIndex = (point) ->
   p = point.sub(GRID_SIZE / 2).roundGrid()
   (p.x / GRID_SIZE +
@@ -95,56 +88,28 @@ machine.onMemoryUpdated = (index, value) ->
 count = 0
 
 setInterval ->
-  machine.memory.setInput 0, count++
+  machine.memory.ports[0].setValue count++
 , 1000
 
 drawMemory = ->
-  fontSize = 12
-  lineHeight = fontSize
-  fontFamily = window.getComputedStyle($("body")).getPropertyValue("font-family")
-  ctx.font = "#{fontSize}px #{fontFamily}"
-  ctx.fillStyle = "rgba(0, 0, 0, 0.2)"
-  ctx.textAlign = "center"
-  for x in [0..MEMORY_COLS - 1]
-    for y in [0..MEMORY_ROWS - 1]
-      value = machine.memory.getOutput(x + y * MEMORY_COLS)
-      ctx.fillText "#{value}", 
-                   (x + 0.5) * GRID_SIZE, 
-                   (y + 0.5) * GRID_SIZE + lineHeight / 2, 
-                   GRID_SIZE
+  for p in machine.memory.ports
+    p.draw ctx, 
+      lineWidth: 1
+      color: "rgba(210, 210, 210, 1)"
 
 drawFunc = (func, style = "rgba(0, 0, 0, 0.4)") ->
-  # draw input
-  inHeight = GRID_SIZE * func.getInputNum()
+  # draw background
+  for p in func.ports
+    f = p.getFrame()
+    ctx.beginPath()
+    ctx.rect f.x, f.y, f.width, f.height
+    ctx.fillStyle = "white"
+    ctx.fill()
 
-  ctx.beginPath()
-  ctx.rect func.x, func.y, GRID_SIZE, inHeight
-  ctx.fillStyle = "white"
-  ctx.fill()
-
-  ctx.beginPath()
-  ctx.gridPath GRID_SIZE, 
-               GRID_SIZE, inHeight, 
-               func.x, func.y
-  ctx.lineWidth = 2
-  ctx.strokeStyle = style
-  ctx.stroke()
-
-  #draw output
-  outHeight = GRID_SIZE * func.getOutputNum()
-
-  ctx.beginPath()
-  ctx.rect func.x + GRID_SIZE, func.y, GRID_SIZE, outHeight
-  ctx.fillStyle = "white"
-  ctx.fill()
-
-  ctx.beginPath()
-  ctx.gridPath GRID_SIZE, 
-               GRID_SIZE, outHeight, 
-               func.x + GRID_SIZE, func.y
-  ctx.lineWidth = 2
-  ctx.strokeStyle = style
-  ctx.stroke()
+  for p in func.ports
+    p.draw ctx, 
+      lineWidth: 2
+      color: style
 
 drawFrame = (rect, style = "rgba(0, 0, 0, 0.4)") ->
   ctx.beginPath()
@@ -229,7 +194,6 @@ redraw = ->
   rect = canvas.getBoundingClientRect()
   ctx.clearRect 0, 0, rect.width, rect.height
   stage.update()
-  drawGrid()
   drawMemory()
   drawFrames()
   drawFuncs()

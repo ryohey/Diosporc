@@ -24,4 +24,24 @@ class Port
   getOutputPosition: ->
     @position.add new Point(0, conf.gridSize / 2)
 
+  draw: (ctx, style = {lineWidth: 2, color: "rgba(0, 0, 0, 0.4)"}) ->
+    f = @getFrame()
+    ctx.beginPath()
+    ctx.rect f.x + 0.5, f.y + 0.5, 
+             f.width,   f.height
+    ctx.lineWidth = style.lineWidth
+    ctx.strokeStyle = style.color
+    ctx.stroke()
+
+    # draw value
+    fontSize = 12
+    lineHeight = fontSize
+    ctx.font = "#{fontSize}px \"Consolas\""
+    ctx.fillStyle = style.color
+    ctx.textAlign = "center"
+    ctx.fillText "#{@value}", 
+                 f.x + 0.5 + conf.gridSize / 2,
+                 f.y + 0.5 + lineHeight / 2 + conf.gridSize / 2, 
+                 conf.gridSize
+
 module.exports = Port
