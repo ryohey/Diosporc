@@ -3,7 +3,7 @@ Point = require "./point.coffee"
 Size = require "./size.coffee"
 Rect = require "./rect.coffee"
 Machine = require "./machine.coffee"
-Node = require "./node.coffee"
+Port = require "./port.coffee"
 {Memory, Func} = require "./io.coffee"
 
 width = 960
@@ -20,6 +20,7 @@ document.machine = machine
 canvas = document.getElementById "canvas"
 ctx = canvas.getContext "2d"
 stage = new createjs.Stage "canvas"
+Port.stage = stage
 
 createjs.Ticker.setFPS 60
 createjs.Ticker.addEventListener "tick", stage
@@ -60,7 +61,7 @@ CanvasRenderingContext2D.prototype.gridPath = (gridSize, width, height, startX =
     y = dy * gridSize + 0.5 + startY
     @moveTo startX, y
     @lineTo startX + width, y
-    
+
 pointToIndex = (point) ->
   p = point.sub(GRID_SIZE / 2).roundGrid()
   (p.x / GRID_SIZE +
@@ -71,19 +72,6 @@ indexToPoint = (index) ->
   dx = index - dy * MEMORY_COLS
   new Point dx * GRID_SIZE,
             dy * GRID_SIZE
-
-highlightMemory = (index) ->
-  pos = indexToPoint index
-
-  rect = new createjs.Shape()
-  rect.graphics.beginFill("rgba(255, 0, 0, 0.2)").drawRect pos.x, pos.y, GRID_SIZE, GRID_SIZE
-  stage.addChild rect
-  createjs.Tween.get rect
-    .to { alpha: 0 }, 500, createjs.Ease.getPowInOut(2)
-    .call (e) -> stage.removeChild e.target
-
-machine.onMemoryUpdated = (index, value) ->
-  highlightMemory index
 
 count = 0
 
@@ -151,29 +139,11 @@ drawFrames = ->
 drawFuncs = ->
   drawFunc f for f in machine.funcs
 
-nodeToPoint = (node, direction = "in") ->
-  switch node.type
-    when Node.Type.Memory
-      p = indexToPoint(node.indexes[0])
-      if direction is "out"
-        p.x += GRID_SIZE
-      p.y += GRID_SIZE / 2
-    when Node.Type.Func
-      func = machine.funcs[node.indexes[0]]
-      p = func.copy()
-      p.y += GRID_SIZE / 2
-      p.y += GRID_SIZE * node.indexes[1]
-      if direction is "out"
-        p.x += GRID_SIZE * 2
-  p
-
 drawLinks = ->
-  for key, value of machine.links
-    fromNode = Node.fromString key
-    from = nodeToPoint fromNode, "out"
-    for toNode in value
-      to = nodeToPoint toNode, "in"
-      drawLink from, to
+  for fromPort in machine.allPorts()
+    for toPort in fromPort.outPorts
+      drawLink fromPort.getOutputPosition(), 
+               toPort.getInputPosition()
 
 drawDrag = ->
   return if dragEvent?.state isnt DragState.Move
@@ -202,7 +172,6 @@ redraw = ->
 
 getTarget = (pos) ->
   frame = findFrameContainsPoint pos
-  func = findFuncContainsPoint pos
 
   type = TargetType.None
   target = null
@@ -213,11 +182,6 @@ getTarget = (pos) ->
       type = TargetType.FrameEdge
     else
       type = TargetType.Frame
-  else if func?
-    type = TargetType.Func
-    target = func
-  else
-    type = TargetType.Canvas
 
   [type, target]
 
@@ -286,12 +250,21 @@ canvas.onselectstart = -> false
 
 canvas.onmousedown = (e) ->
   pos = new Point(e.layerX, e.layerY)
-
+  dragEvent.start = pos
   dragEvent.state = DragState.Down
   dragEvent.button = e.button
-  dragEvent.start = pos
-  [dragEvent.targetType, dragEvent.target] = getTarget pos
-  true
+
+  [targetType, target] = getTarget pos
+  if target?
+    dragEvent.target = target
+    dragEvent.targetType = targetType
+  else
+    port = machine.portContainsPoint pos
+    dragEvent.target = port
+    if port.parent instanceof Memory
+      dragEvent.targetType = TargetType.Canvas
+    else if port.parent instanceof Func
+      dragEvent.targetType = TargetType.Func
 
 canvas.onmousemove = (e) ->
   pos = new Point(e.layerX, e.layerY)
@@ -309,16 +282,6 @@ canvas.onmousemove = (e) ->
 
   dragEvent.state = DragState.Move
   dragEvent.current = pos
-
-nodeFromPoint = (point) ->
-  [type, target] = getTarget point
-  switch type 
-    when TargetType.Canvas
-      new Node Node.Type.Memory, [pointToIndex(point)]
-    when TargetType.Frame
-      new Node Node.Type.Memory, [pointToIndex(point)]
-    when TargetType.Func
-      new Node Node.Type.Func, [machine.funcs.indexOf(target), 0]
 
 canvas.onmouseup = (e) ->
   if e.button is 0
@@ -347,9 +310,9 @@ canvas.onmouseup = (e) ->
           when TargetType.Func
             dragEvent.target.copyFrom dragEvent.current.roundGrid()
   else if e.button is 2
-    from = nodeFromPoint dragEvent.start
-    to   = nodeFromPoint dragEvent.current
-    machine.addLink from, to
+    from = machine.portContainsPoint dragEvent.start
+    to   = machine.portContainsPoint dragEvent.current
+    from.outPorts.push to
 
   dragEvent.state = DragState.None  
 

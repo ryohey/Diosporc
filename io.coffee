@@ -28,12 +28,11 @@ indexToPoint = (index) ->
 class Memory # implements IO
   constructor: (size) ->
     @buffer = new Uint8Array(size)
+    @pos = new Point(0, 0)
     @ports = _.flatten(
       for x in [0..MEMORY_COLS - 1]
         for y in [0..MEMORY_ROWS - 1]
-          p = new Port(new Rect(x * GRID_SIZE, y * GRID_SIZE, GRID_SIZE, GRID_SIZE), true, true)
-          p.setValue 0
-          p
+          new Port(new Rect(x * GRID_SIZE, y * GRID_SIZE, GRID_SIZE, GRID_SIZE), true, true, this)
     )
     
   setInput: (index, value) -> 
@@ -44,9 +43,9 @@ class Memory # implements IO
   getOutput: (index) -> @buffer[index]
   getOutputNum: -> @buffer.length
 
-class Func extends Point # implements IO
+class Func # implements IO
   constructor: (pos, func = (x) -> x) ->
-    super pos.x, pos.y
+    @pos = pos
     @func = func
     @input = []
     @received = [0..@getInputNum() - 1].map -> false
