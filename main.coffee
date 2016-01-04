@@ -1,114 +1,28 @@
+conf = require "./config.coffee"
+Point = require "./point.coffee"
+Size = require "./size.coffee"
+Rect = require "./rect.coffee"
+Machine = require "./machine.coffee"
+
 width = 960
 height = 500
-GRID_SIZE = 42
+GRID_SIZE = conf.gridSize
 FRAME_EDGE_SIZE = 3
 FUNC_RADIUS = GRID_SIZE / 3
 MEMORY_COLS = Math.round(width / GRID_SIZE)
 MEMORY_ROWS = Math.round(height / GRID_SIZE)
 
-memory = new Uint8Array(MEMORY_COLS * MEMORY_ROWS)
+machine = new Machine MEMORY_COLS * MEMORY_ROWS
 
-$ = (q) -> document.querySelector(q)
 canvas = document.getElementById "canvas"
 ctx = canvas.getContext "2d"
 stage = new createjs.Stage "canvas"
 
-circle = new createjs.Shape()
-circle.graphics.beginFill("DeepSkyBlue").drawCircle(0, 0, 50)
-circle.x = 100
-circle.y = 100
-stage.addChild(circle)
-createjs.Tween.get(circle, { loop: true })
-  .to({ x: 400 }, 1000, createjs.Ease.getPowInOut(4))
-  .to({ alpha: 0, y: 175 }, 500, createjs.Ease.getPowInOut(2))
-  .to({ alpha: 0, y: 225 }, 100)
-  .to({ alpha: 1, y: 200 }, 500, createjs.Ease.getPowInOut(2))
-  .to({ x: 100 }, 800, createjs.Ease.getPowInOut(2))
-createjs.Ticker.setFPS(60)
+createjs.Ticker.setFPS 60
 createjs.Ticker.addEventListener "tick", stage
 createjs.Ticker.addEventListener "tick", (e) -> redraw()
 
-roundGrid = (x) -> 
-  Math.round(x / GRID_SIZE) * GRID_SIZE
-
-class Point
-  constructor: (x, y) ->
-    @x = x
-    @y = y
-
-  add: (v) ->
-    if v instanceof Point
-      new Point(@x + v.x, @y + v.y)
-    else
-      new Point(@x + v, @y + v)
-
-  sub: (v) ->
-    if v instanceof Point
-      new Point(@x - v.x, @y - v.y)
-    else
-      new Point(@x - v, @y - v)
-
-  roundGrid: ->
-    new Point(roundGrid(@x), roundGrid(@y))
-
-  copyFrom: (point) ->
-    @x = point.x
-    @y = point.y
-
-class Size
-  constructor: (width, height) ->
-    @width = width
-    @height = height
-
-  @fromPoint = (point) ->
-    new Size(point.x, point.y)
-
-class Rect
-  constructor: (x, y, width, height) ->
-    @x = x
-    @y = y
-    @width = width
-    @height = height
-    @normalize()
-
-  point: -> new Point(@x, @y)
-  size: -> new Size(@width, @height)
-
-  @fromPoint = (point, size) ->
-    new Rect(point.x, point.y, size.width, size.height)
-
-  inset: (dx, dy) ->
-    new Rect(@x + dx, @y + dy, @width - dx * 2, @height - dy * 2)
-
-  contains: (point) ->
-    (point.x >= @x and
-     point.y >= @y and
-     point.x <= @x + @width and
-     point.y <= @y + @height)
-
-  setPoint: (point) ->
-    @x = point.x
-    @y = point.y
-
-  setSize: (size) ->
-    @width = size.width
-    @height = size.height
-    @normalize()
-
-  normalize: ->
-    if @width < 0
-      @x += @width
-      @width *= -1
-
-    if @height < 0
-      @y += @height
-      @height *= -1
-
-    if @width is 0
-      @width = GRID_SIZE
-
-    if @height is 0
-      @height = GRID_SIZE
+$ = (q) -> document.querySelector(q)
 
 frames = []
 funcs = []
@@ -161,12 +75,22 @@ highlightMemory = (index) ->
   dx = index - dy * MEMORY_COLS
   x = dx * GRID_SIZE
   y = dy * GRID_SIZE
-  console.log dx, dy
-  ctx.beginPath()
-  ctx.rect x + 0.5,   y + 0.5, 
-           GRID_SIZE, GRID_SIZE
-  ctx.fillStyle = "rgba(255, 0, 0, 0.2)"
-  ctx.fill()
+
+  rect = new createjs.Shape()
+  rect.graphics.beginFill("rgba(255, 0, 0, 0.2)").drawRect x, y, GRID_SIZE, GRID_SIZE
+  stage.addChild rect
+  createjs.Tween.get rect
+    .to { alpha: 0 }, 500, createjs.Ease.getPowInOut(2)
+    .call (e) -> stage.removeChild e.target
+
+machine.onMemoryUpdated = (index, value) ->
+  highlightMemory index
+
+count = 0
+
+setInterval ->
+  machine.setMemory 0, count++
+, 1000
 
 drawMemory = ->
   fontSize = 12
@@ -177,7 +101,7 @@ drawMemory = ->
   ctx.textAlign = "center"
   for x in [0..MEMORY_COLS - 1]
     for y in [0..MEMORY_ROWS - 1]
-      value = memory[x + y * MEMORY_COLS]
+      value = machine.getMemory(x + y * MEMORY_COLS)
       ctx.fillText "#{value}", 
                    (x + 0.5) * GRID_SIZE, 
                    (y + 0.5) * GRID_SIZE + lineHeight / 2, 
@@ -315,9 +239,6 @@ canvas.onmousedown = (e) ->
 
 canvas.onmousemove = (e) ->
   pos = new Point(e.layerX, e.layerY)
-
-  console.log addressFromPoint pos
-  highlightMemory addressFromPoint(pos)
 
   #change cursor
   if dragEvent.state is DragState.None
