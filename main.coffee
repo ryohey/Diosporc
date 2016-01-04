@@ -11,6 +11,22 @@ memory = new Uint8Array(MEMORY_COLS * MEMORY_ROWS)
 $ = (q) -> document.querySelector(q)
 canvas = document.getElementById "canvas"
 ctx = canvas.getContext "2d"
+stage = new createjs.Stage "canvas"
+
+circle = new createjs.Shape()
+circle.graphics.beginFill("DeepSkyBlue").drawCircle(0, 0, 50)
+circle.x = 100
+circle.y = 100
+stage.addChild(circle)
+createjs.Tween.get(circle, { loop: true })
+  .to({ x: 400 }, 1000, createjs.Ease.getPowInOut(4))
+  .to({ alpha: 0, y: 175 }, 500, createjs.Ease.getPowInOut(2))
+  .to({ alpha: 0, y: 225 }, 100)
+  .to({ alpha: 1, y: 200 }, 500, createjs.Ease.getPowInOut(2))
+  .to({ x: 100 }, 800, createjs.Ease.getPowInOut(2))
+createjs.Ticker.setFPS(60)
+createjs.Ticker.addEventListener "tick", stage
+createjs.Ticker.addEventListener "tick", (e) -> redraw()
 
 roundGrid = (x) -> 
   Math.round(x / GRID_SIZE) * GRID_SIZE
@@ -94,6 +110,29 @@ class Rect
     if @height is 0
       @height = GRID_SIZE
 
+frames = []
+funcs = []
+
+DragState = 
+  None: 0
+  Down: 1
+  Move: 2
+
+TargetType =
+  None: 0
+  Frame: 10
+  FrameEdge: 11
+  Canvas: 20
+  Func: 30
+
+dragEvent = 
+  state: DragState.None
+  targetType: TargetType.None
+  target: null
+  moved: false
+  start: new Point(0, 0)
+  current: new Point(0, 0)
+
 addressFromPoint = (point) ->
   p = point.sub(GRID_SIZE / 2).roundGrid()
   (p.x / GRID_SIZE +
@@ -165,38 +204,27 @@ drawFrames = ->
 drawFuncs = ->
   drawFunc f for f in funcs
 
+drawDrag = ->
+  return if dragEvent?.state isnt DragState.Move
+  switch dragEvent.targetType
+    when TargetType.Canvas
+      drawFramePreview dragEvent
+    when TargetType.Func
+      drawDragFuncPreview dragEvent
+    when TargetType.Frame
+      drawDragFramePreview dragEvent
+    when TargetType.FrameEdge
+      resizeFramePreview dragEvent
+
 redraw = ->
   rect = canvas.getBoundingClientRect()
   ctx.clearRect 0, 0, rect.width, rect.height
+  stage.update()
   drawGrid()
   drawMemory()
   drawFrames()
   drawFuncs()
-
-frames = []
-funcs = []
-
-redraw()
-
-DragState = 
-  None: 0
-  Down: 1
-  Move: 2
-
-TargetType =
-  None: 0
-  Frame: 10
-  FrameEdge: 11
-  Canvas: 20
-  Func: 30
-
-dragEvent = 
-  state: DragState.None
-  targetType: TargetType.None
-  target: null
-  moved: false
-  start: new Point(0, 0)
-  current: new Point(0, 0)
+  drawDrag()
 
 # change cursor over canvas when dragging
 canvas.onselectstart = -> false
@@ -300,17 +328,6 @@ canvas.onmousemove = (e) ->
 
   dragEvent.state = DragState.Move
   dragEvent.current = pos
-
-  redraw()
-  switch dragEvent.targetType
-    when TargetType.Canvas
-      drawFramePreview dragEvent
-    when TargetType.Func
-      drawDragFuncPreview dragEvent
-    when TargetType.Frame
-      drawDragFramePreview dragEvent
-    when TargetType.FrameEdge
-      resizeFramePreview dragEvent
 
 canvas.onmouseup = (e) ->
   switch dragEvent.state
