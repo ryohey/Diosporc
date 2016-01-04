@@ -1,8 +1,12 @@
 width = 960
 height = 500
-GRID_SIZE = 24
+GRID_SIZE = 42
 FRAME_EDGE_SIZE = 3
 FUNC_RADIUS = GRID_SIZE / 3
+MEMORY_COLS = Math.round(width / GRID_SIZE)
+MEMORY_ROWS = Math.round(height / GRID_SIZE)
+
+memory = new Uint8Array(MEMORY_COLS * MEMORY_ROWS)
 
 $ = (q) -> document.querySelector(q)
 canvas = document.getElementById "canvas"
@@ -90,6 +94,11 @@ class Rect
     if @height is 0
       @height = GRID_SIZE
 
+addressFromPoint = (point) ->
+  p = point.sub(GRID_SIZE / 2).roundGrid()
+  (p.x / GRID_SIZE +
+   p.y / GRID_SIZE * MEMORY_COLS)
+
 CanvasRenderingContext2D.prototype.gridPath = (gridSize, width, height) ->
   for dx in [0..width / gridSize]
     x = dx * gridSize + 0.5
@@ -107,6 +116,33 @@ drawGrid = ->
   ctx.strokeStyle = "rgba(0, 0, 0, 0.1)"
   ctx.gridPath GRID_SIZE, width, height
   ctx.stroke()
+
+highlightMemory = (index) ->
+  dy = Math.floor(index / MEMORY_COLS)
+  dx = index - dy * MEMORY_COLS
+  x = dx * GRID_SIZE
+  y = dy * GRID_SIZE
+  console.log dx, dy
+  ctx.beginPath()
+  ctx.rect x + 0.5,   y + 0.5, 
+           GRID_SIZE, GRID_SIZE
+  ctx.fillStyle = "rgba(255, 0, 0, 0.2)"
+  ctx.fill()
+
+drawMemory = ->
+  fontSize = 12
+  lineHeight = fontSize
+  fontFamily = window.getComputedStyle($("body")).getPropertyValue("font-family")
+  ctx.font = "#{fontSize}px #{fontFamily}"
+  ctx.fillStyle = "rgba(0, 0, 0, 0.2)"
+  ctx.textAlign = "center"
+  for x in [0..MEMORY_COLS - 1]
+    for y in [0..MEMORY_ROWS - 1]
+      value = memory[x + y * MEMORY_COLS]
+      ctx.fillText "#{value}", 
+                   (x + 0.5) * GRID_SIZE, 
+                   (y + 0.5) * GRID_SIZE + lineHeight / 2, 
+                   GRID_SIZE
 
 drawFunc = (pos, style = "rgba(0, 0, 0, 0.4)") ->
   ctx.beginPath()
@@ -133,6 +169,7 @@ redraw = ->
   rect = canvas.getBoundingClientRect()
   ctx.clearRect 0, 0, rect.width, rect.height
   drawGrid()
+  drawMemory()
   drawFrames()
   drawFuncs()
 
@@ -243,13 +280,16 @@ canvas.onmousedown = (e) ->
   pos = new Point(e.layerX, e.layerY)
 
   dragEvent.state = DragState.Down
-  dragEvent.start = pos.roundGrid()
+  dragEvent.start = pos
   [dragEvent.targetType, dragEvent.target] = getTarget pos
   console.log "[onmousedown] type: #{dragEvent.targetType}"
   true
 
 canvas.onmousemove = (e) ->
   pos = new Point(e.layerX, e.layerY)
+
+  console.log addressFromPoint pos
+  highlightMemory addressFromPoint(pos)
 
   #change cursor
   if dragEvent.state is DragState.None
@@ -259,7 +299,7 @@ canvas.onmousemove = (e) ->
     canvas.style.cursor = cursorForTargetType dragEvent.targetType
 
   dragEvent.state = DragState.Move
-  dragEvent.current = pos.roundGrid()
+  dragEvent.current = pos
 
   redraw()
   switch dragEvent.targetType
@@ -284,17 +324,17 @@ canvas.onmouseup = (e) ->
       switch dragEvent.targetType
         when TargetType.Canvas
           addFrame Rect.fromPoint(
-            dragEvent.start, 
-            Size.fromPoint(dragEvent.current.sub dragEvent.start)
+            dragEvent.start.roundGrid(), 
+            Size.fromPoint(dragEvent.current.sub(dragEvent.start).roundGrid())
           )
         when TargetType.Frame
           offset = dragEvent.target.point().sub dragEvent.start
           targetPos = dragEvent.current.add offset
-          dragEvent.target.setPoint targetPos
+          dragEvent.target.setPoint targetPos.roundGrid()
         when TargetType.FrameEdge
-          size = Size.fromPoint(dragEvent.current.sub dragEvent.target.point())
+          size = Size.fromPoint dragEvent.current.sub(dragEvent.target.point()).roundGrid()
           dragEvent.target.setSize size
         when TargetType.Func
-          dragEvent.target.copyFrom dragEvent.current
+          dragEvent.target.copyFrom dragEvent.current.roundGrid()
   redraw()
   dragEvent.state = DragState.None  
