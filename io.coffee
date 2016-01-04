@@ -27,21 +27,20 @@ class Func # implements IO
     @inPorts = (
       for i in [0..func.length - 1]
         p = new Port(new Rect(0, i * GRID_SIZE, GRID_SIZE, GRID_SIZE), true, false, this)
-        p.onValueChanged = @onInputValueChanged
+        p.didSetValue = @onInputValueChanged
         p
     )
     @outPort = new Port(new Rect(GRID_SIZE, 0, GRID_SIZE, GRID_SIZE), false, true, this)
     @ports = @inPorts.concat [@outPort]
 
-  onInputValueChanged: (port, value) ->
+  onInputValueChanged: (port, value) =>
     @updateOutput() if @isReady()
     
   isReady: ->
     _.all @inPorts, (p) -> p.received
 
   updateOutput: ->
-    @outPort.setValue @func.apply(null, @input)
-    @onOutputChanged(this, 0, @output)
+    @outPort.setValue @func.apply(null, @inPorts.map((p) -> p.getValue()))
 
     # wait next input
     (p.received = false) for p in @inPorts

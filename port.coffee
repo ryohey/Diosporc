@@ -18,7 +18,7 @@ class Port
   setValue: (v) -> 
     @value = v
     @received = true
-    @didSetValue?(this, value)
+    @didSetValue?(this, v)
     @highlight()
     port.setValue(v) for port in @outPorts
 

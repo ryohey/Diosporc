@@ -277,7 +277,7 @@ canvas.onmouseup = (e) ->
         # on click
         switch dragEvent.targetType
           when TargetType.Canvas
-            func = new Func(new Point(e.layerX, e.layerY).roundGrid())
+            func = new Func(new Point(e.layerX, e.layerY).roundGrid(), (a, b) -> a + b)
             machine.addFunc func
       when DragState.Move
         # finish dragging
