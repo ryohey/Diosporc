@@ -8,18 +8,21 @@ $ = (q) -> document.querySelector(q)
 canvas = document.getElementById "canvas"
 ctx = canvas.getContext "2d"
 
+roundGrid = (x) -> 
+  Math.round(x / GRID_SIZE) * GRID_SIZE
+
 class Point
   constructor: (x, y) ->
     @x = x
     @y = y
 
-  add = (v) ->
+  add: (v) ->
     if v instanceof Point
       new Point(@x + v.x, @y + v.y)
     else
       new Point(@x + v, @y + v)
 
-  sub = (v) ->
+  sub: (v) ->
     if v instanceof Point
       new Point(@x - v.x, @y - v.y)
     else
@@ -27,6 +30,10 @@ class Point
 
   roundGrid: ->
     new Point(roundGrid(@x), roundGrid(@y))
+
+  copyFrom: (point) ->
+    @x = point.x
+    @y = point.y
 
 class Size
   constructor: (width, height) ->
@@ -43,11 +50,14 @@ class Rect
     @width = width
     @height = height
 
+  point: -> new Point(@x, @y)
+  size: -> new Size(@width, @height)
+
   @fromPoint = (point, size) ->
     new Rect(point.x, point.y, size.width, size.height)
 
   inset: (dx, dy) ->
-    new Rect(@x - dx, @y - dy, @width + dx, @height + dy)    
+    new Rect(@x + dx, @y + dy, @width - dx * 2, @height - dy * 2)
 
   contains: (point) ->
     (point.x >= @x and
@@ -172,81 +182,73 @@ canvas.onmousedown = (e) ->
   dragEvent.start.x = roundGrid e.layerX
   dragEvent.start.y = roundGrid e.layerY
   [dragEvent.targetType, dragEvent.target] = getTarget dragEvent.start
+  console.log "[onmousedown] type: #{dragEvent.targetType}"
   true
 
 findFuncContainsPoint = (p) ->
-  for f in funcs
+  _.find funcs, (f) ->
     rect = Rect.fromPoint f.sub(FUNC_RADIUS),
-                          Size.fromPoint(f.add(FUNC_RADIUS))
-    if rect.contains p
-      return f
-
-  return null
+                          new Size(FUNC_RADIUS * 2, FUNC_RADIUS * 2)
+    rect.contains p
 
 findFrameContainsPoint = (p, margin = FRAME_EDGE_SIZE) ->
-  for f in frames
-    if (f.inset(p, margin).contains p)
-      return f
-  return null
+  _.find frames, (f) -> 
+    f.inset(-margin, -margin).contains p
 
 # point, frame
 isFrameEdge = (p, f) ->
-  a = f.inset(p, FRAME_EDGE_SIZE).contains p
-  b = f.inset(p, -FRAME_EDGE_SIZE).contains p
+  a = f.inset(-FRAME_EDGE_SIZE, -FRAME_EDGE_SIZE).contains p
+  b = f.inset(FRAME_EDGE_SIZE, FRAME_EDGE_SIZE).contains p
   a and not b
 
-addFunc = (x, y) ->
-  funcs.push new Point(x, y)
+addFunc = (point) ->
+  funcs.push point
 
-addFrame = (dragEvent) ->
-  frames.push Rect.fromPoint(
-    dragEvent.start, 
-    Size.fromPoint(pointSub(dragEvent.current, dragEvent.start))
-  )
+addFrame = (rect) ->
+  frames.push rect
 
 canvas.onmouseup = (e) ->
+  console.log "[onmouseup] state: #{dragEvent.state}"
   switch dragEvent.state
     when DragState.Down
       # on click
-      addFunc new Point(e.layerX, e.layerY).roundGrid()
+      switch dragEvent.targetType
+        when TargetType.Canvas
+          addFunc new Point(e.layerX, e.layerY).roundGrid()
     when DragState.Move
       # finish dragging
       switch dragEvent.targetType
         when TargetType.Canvas
-          addFrame dragEvent
+          addFrame Rect.fromPoint(
+            dragEvent.start, 
+            Size.fromPoint(dragEvent.current.sub dragEvent.start)
+          )
         when TargetType.Frame
-          offset = pointSub dragEvent.target, dragEvent.start
-          targetPos = pointAdd dragEvent.current, offset
+          offset = dragEvent.target.point().sub dragEvent.start
+          targetPos = dragEvent.current.add offset
           dragEvent.target.setPoint targetPos
         when TargetType.FrameEdge
-          size = Size.fromPoint(pointSub(dragEvent.current,
-                                         dragEvent.target))
+          size = Size.fromPoint(dragEvent.current.sub dragEvent.target.point())
           dragEvent.target.setSize size
         when TargetType.Func
-          dragEvent.target.setSize dragEvent.current
+          dragEvent.target.copyFrom dragEvent.current
   redraw()
   dragEvent.state = DragState.None  
 
 drawFramePreview = (dragEvent) ->
-  size = Size.fromPoint pointSub(
-    dragEvent.current, 
-    dragEvent.start)
+  size = Size.fromPoint dragEvent.current.sub(dragEvent.start)
 
   drawFrame Rect.fromPoint(dragEvent.start, size)
   , "rgba(0, 0, 0, 0.2)"
 
 resizeFramePreview = (dragEvent) ->
-  size = Size.fromPoint pointSub(
-    dragEvent.current, 
-    dragEvent.target)
+  size = Size.fromPoint dragEvent.current.sub(dragEvent.target.point())
 
   drawFrame Rect.fromPoint(dragEvent.target, size)
   , "rgba(0, 0, 0, 0.2)"
 
 drawDragFramePreview = (dragEvent) ->
-  pos = pointAdd(
-    dragEvent.current, 
-    pointSub(dragEvent.target, dragEvent.start))
+  pos = dragEvent.current.add dragEvent.target.point().sub(dragEvent.start)
 
   drawFrame Rect.fromPoint(pos, dragEvent.target)
   , "rgba(0, 0, 0, 0.2)"
@@ -255,7 +257,6 @@ drawDragFuncPreview = (dragEvent) ->
   drawFunc dragEvent.current, "rgba(0, 0, 0, 0.2)"
 
 cursorForTargetType = (type) ->
-  console.log type
   switch type
     when TargetType.Canvas
       "default"
