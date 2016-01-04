@@ -269,8 +269,6 @@ canvas.onmousedown = (e) ->
 canvas.onmousemove = (e) ->
   pos = new Point(e.layerX, e.layerY)
 
-  console.log machine.portContainsPoint pos
-
   #change cursor
   if dragEvent.state is DragState.None
     canvas.style.cursor = cursorForTargetType getTarget(pos)[0]
@@ -308,7 +306,8 @@ canvas.onmouseup = (e) ->
             size = Size.fromPoint dragEvent.current.sub(dragEvent.target.point()).roundGrid()
             dragEvent.target.setSize size
           when TargetType.Func
-            dragEvent.target.copyFrom dragEvent.current.roundGrid()
+            port = machine.portContainsPoint dragEvent.start
+            port.parent.pos = dragEvent.current.roundGrid()
   else if e.button is 2
     from = machine.portContainsPoint dragEvent.start
     to   = machine.portContainsPoint dragEvent.current
