@@ -50,16 +50,16 @@ dragEvent =
   start: new Point(0, 0)
   current: new Point(0, 0)
 
-CanvasRenderingContext2D.prototype.gridPath = (gridSize, width, height) ->
+CanvasRenderingContext2D.prototype.gridPath = (gridSize, width, height, startX = 0, startY = 0) ->
   for dx in [0..width / gridSize]
-    x = dx * gridSize + 0.5
-    @moveTo x, 0
-    @lineTo x, height
+    x = dx * gridSize + 0.5 + startX
+    @moveTo x, startY
+    @lineTo x, startY + height
 
   for dy in [0..height / gridSize]
-    y = dy * gridSize + 0.5
-    @moveTo 0, y
-    @lineTo width, y
+    y = dy * gridSize + 0.5 + startY
+    @moveTo startX, y
+    @lineTo startX + width, y
 
 drawGrid = ->
   ctx.beginPath()
@@ -113,9 +113,35 @@ drawMemory = ->
                    (y + 0.5) * GRID_SIZE + lineHeight / 2, 
                    GRID_SIZE
 
-drawFunc = (pos, style = "rgba(0, 0, 0, 0.4)") ->
+drawFunc = (func, style = "rgba(0, 0, 0, 0.4)") ->
+  # draw input
+  inHeight = GRID_SIZE * func.getInputNum()
+
   ctx.beginPath()
-  ctx.arc pos.x + 0.5, pos.y + 0.5, FUNC_RADIUS, 0, 2 * Math.PI
+  ctx.rect func.x, func.y, GRID_SIZE, inHeight
+  ctx.fillStyle = "white"
+  ctx.fill()
+
+  ctx.beginPath()
+  ctx.gridPath GRID_SIZE, 
+               GRID_SIZE, inHeight, 
+               func.x, func.y
+  ctx.lineWidth = 2
+  ctx.strokeStyle = style
+  ctx.stroke()
+
+  #draw output
+  outHeight = GRID_SIZE * func.getOutputNum()
+
+  ctx.beginPath()
+  ctx.rect func.x + GRID_SIZE, func.y, GRID_SIZE, outHeight
+  ctx.fillStyle = "white"
+  ctx.fill()
+
+  ctx.beginPath()
+  ctx.gridPath GRID_SIZE, 
+               GRID_SIZE, outHeight, 
+               func.x + GRID_SIZE, func.y
   ctx.lineWidth = 2
   ctx.strokeStyle = style
   ctx.stroke()
@@ -160,28 +186,28 @@ drawFrames = ->
 drawFuncs = ->
   drawFunc f for f in machine.funcs
 
-nodeToPoint = (node, direction = "left") ->
+nodeToPoint = (node, direction = "in") ->
   switch node.type
     when Node.Type.Memory
       p = indexToPoint(node.indexes[0])
-      if direction is "right"
+      if direction is "out"
         p.x += GRID_SIZE
       p.y += GRID_SIZE / 2
     when Node.Type.Func
       func = machine.funcs[node.indexes[0]]
       p = func.copy()
-      if direction is "left"
-        p.x -= FUNC_RADIUS
-      else if direction is "right"
-        p.x += FUNC_RADIUS
+      p.y += GRID_SIZE / 2
+      p.y += GRID_SIZE * node.indexes[1]
+      if direction is "out"
+        p.x += GRID_SIZE * 2
   p
 
 drawLinks = ->
   for key, value of machine.links
     fromNode = Node.fromString key
-    from = nodeToPoint fromNode, "right"
+    from = nodeToPoint fromNode, "out"
     for toNode in value
-      to = nodeToPoint toNode, "left"
+      to = nodeToPoint toNode, "in"
       drawLink from, to
 
 drawDrag = ->
@@ -278,7 +304,7 @@ drawDragFramePreview = (dragEvent) ->
   , "rgba(0, 0, 0, 0.2)"
 
 drawDragFuncPreview = (dragEvent) ->
-  drawFunc dragEvent.current, "rgba(0, 0, 0, 0.2)"
+  drawFunc new Func(dragEvent.current), "rgba(0, 0, 0, 0.2)"
 
 cursorForTargetType = (type) ->
   switch type
