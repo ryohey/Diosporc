@@ -32,4 +32,18 @@ class Func
     # wait next input
     (p.received = false) for p in @inPorts
 
+  draw: (ctx, style = {lineWidth: 2, color: "rgba(0, 0, 0, 0.4)"}) ->
+    # draw background
+    for p in @ports
+      f = p.getFrame()
+      ctx.beginPath()
+      ctx.rect f.x, f.y, f.width, f.height
+      ctx.fillStyle = "white"
+      ctx.fill()
+
+    for p in @ports
+      p.draw ctx, 
+        lineWidth: style.lineWidth
+        color: style.color
+
 module.exports = Func

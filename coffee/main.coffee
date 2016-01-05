@@ -64,20 +64,6 @@ drawMemory = ->
       lineWidth: 1
       color: "rgba(210, 210, 210, 1)"
 
-drawFunc = (func, style = "rgba(0, 0, 0, 0.4)") ->
-  # draw background
-  for p in func.ports
-    f = p.getFrame()
-    ctx.beginPath()
-    ctx.rect f.x, f.y, f.width, f.height
-    ctx.fillStyle = "white"
-    ctx.fill()
-
-  for p in func.ports
-    p.draw ctx, 
-      lineWidth: 2
-      color: style
-
 drawFrame = (rect, style = "rgba(0, 0, 0, 0.4)") ->
   ctx.beginPath()
   ctx.rect rect.x + 0.5, rect.y + 0.5, 
@@ -116,7 +102,7 @@ drawFrames = ->
   drawFrame f for f in frames
 
 drawFuncs = ->
-  drawFunc f for f in machine.funcs
+  f.draw(ctx) for f in machine.funcs
 
 drawLinks = ->
   for fromPort in machine.allPorts()
@@ -164,12 +150,6 @@ getTarget = (pos) ->
 
   [type, target]
 
-findFuncContainsPoint = (p) ->
-  _.find machine.funcs, (f) ->
-    rect = Rect.fromPoint f.sub(FUNC_RADIUS),
-                          new Size(FUNC_RADIUS * 2, FUNC_RADIUS * 2)
-    rect.contains p
-
 findFrameContainsPoint = (p, margin = FRAME_EDGE_SIZE) ->
   _.find frames, (f) -> 
     f.inset(-margin, -margin).contains p
@@ -211,7 +191,8 @@ drawDragFramePreview = (dragEvent) ->
   , "rgba(0, 0, 0, 0.2)"
 
 drawDragFuncPreview = (dragEvent) ->
-  drawFunc new Func(dragEvent.current), "rgba(0, 0, 0, 0.2)"
+  f = new Func(dragEvent.current), "rgba(0, 0, 0, 0.2)"
+  f.draw()
 
 cursorForTargetType = (type) ->
   switch type
