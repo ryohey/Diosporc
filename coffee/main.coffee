@@ -138,7 +138,7 @@ redraw = ->
 getTarget = (pos) ->
   frame = findFrameContainsPoint pos
 
-  type = TargetType.None
+  type = TargetType.Canvas
   target = null
 
   if frame?
@@ -191,8 +191,8 @@ drawDragFramePreview = (dragEvent) ->
   , "rgba(0, 0, 0, 0.2)"
 
 drawDragFuncPreview = (dragEvent) ->
-  f = new Func(dragEvent.current), "rgba(0, 0, 0, 0.2)"
-  f.draw()
+  f = new Func(dragEvent.current, dragEvent.target.parent.func)
+  f.draw ctx, {color: "rgba(0, 0, 0, 0.2)"}
 
 cursorForTargetType = (type) ->
   switch type
