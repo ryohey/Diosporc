@@ -137,6 +137,7 @@ redraw = ->
 
 getTarget = (pos) ->
   frame = findFrameContainsPoint pos
+  port = machine.portContainsPoint pos
 
   type = TargetType.Canvas
   target = null
@@ -147,6 +148,10 @@ getTarget = (pos) ->
       type = TargetType.FrameEdge
     else
       type = TargetType.Frame
+  else if port?
+    target = port
+    if port.parent instanceof Func
+      type = TargetType.Func
 
   [type, target]
 
