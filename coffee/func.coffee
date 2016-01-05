@@ -5,20 +5,7 @@ conf = require "./config.coffee"
 
 GRID_SIZE = conf.gridSize
 
-class Memory # implements IO
-  constructor: (width, height) ->
-    @pos = new Point(0, 0)
-
-    cols = Math.round(width / conf.gridSize)
-    rows = Math.round(height / conf.gridSize)
-
-    @ports = _.flatten(
-      for x in [0..cols - 1]
-        for y in [0..rows - 1]
-          new Port(new Rect(x * GRID_SIZE, y * GRID_SIZE, GRID_SIZE, GRID_SIZE), true, true, this)
-    )
-
-class Func # implements IO
+class Func
   constructor: (pos, func = (x) -> x) ->
     @pos = pos
     @func = func
@@ -45,6 +32,4 @@ class Func # implements IO
     # wait next input
     (p.received = false) for p in @inPorts
 
-module.exports = 
-  Memory: Memory
-  Func: Func
+module.exports = Func

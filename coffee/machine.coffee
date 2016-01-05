@@ -1,4 +1,5 @@
-{Memory, Func} = require "./io.coffee"
+Memory = require "./memory.coffee"
+Func = require "./func.coffee"
 
 class Machine
   constructor: (width, height) ->

@@ -4,7 +4,8 @@ Size = require "./size.coffee"
 Rect = require "./rect.coffee"
 Machine = require "./machine.coffee"
 Port = require "./port.coffee"
-{Memory, Func} = require "./io.coffee"
+Memory = require "./memory.coffee"
+Func = require "./func.coffee"
 
 width = 960
 height = 500
@@ -50,17 +51,6 @@ dragEvent =
   moved: false
   start: new Point(0, 0)
   current: new Point(0, 0)
-
-CanvasRenderingContext2D.prototype.gridPath = (gridSize, width, height, startX = 0, startY = 0) ->
-  for dx in [0..width / gridSize]
-    x = dx * gridSize + 0.5 + startX
-    @moveTo x, startY
-    @lineTo x, startY + height
-
-  for dy in [0..height / gridSize]
-    y = dy * gridSize + 0.5 + startY
-    @moveTo startX, y
-    @lineTo startX + width, y
 
 count = 0
 
