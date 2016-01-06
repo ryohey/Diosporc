@@ -4,8 +4,12 @@ Size = require "./size.coffee"
 Rect = require "./rect.coffee"
 Machine = require "./machine.coffee"
 Port = require "./port.coffee"
-Memory = require "./memory.coffee"
 Func = require "./func.coffee"
+PortView = require "./port_view.coffee"
+FuncView = require "./func_view.coffee"
+MemoryView = require "./memory_view.coffee"
+ViewController = require "./view_controller.coffee"
+ActionRouter = require "./action_router.coffee"
 
 width = 960
 height = 500
@@ -15,17 +19,12 @@ FUNC_RADIUS = GRID_SIZE / 3
 MEMORY_COLS = Math.round(width / GRID_SIZE)
 MEMORY_ROWS = Math.round(height / GRID_SIZE)
 
-machine = new Machine width, height
-document.machine = machine
-
 canvas = document.getElementById "canvas"
 ctx = canvas.getContext "2d"
 stage = new createjs.Stage "canvas"
-Port.stage = stage
 
 createjs.Ticker.setFPS 60
 createjs.Ticker.addEventListener "tick", stage
-createjs.Ticker.addEventListener "tick", (e) -> redraw()
 
 $ = (q) -> document.querySelector(q)
 
@@ -52,14 +51,48 @@ dragEvent =
   start: new Point(0, 0)
   current: new Point(0, 0)
 
+##
+
+viewController = new ViewController()
+stage.addChild viewController.view
+
+machine = new Machine width, height
+machine.onPortValueChanged = viewController.onPortValueChanged
+
+actionRouter = new ActionRouter viewController, machine
+
+for dx in [0..MEMORY_COLS - 1]
+  for dy in [0..MEMORY_ROWS - 1]
+    actionRouter.addMemory
+      x: dx * GRID_SIZE
+      y: dy * GRID_SIZE
+
+document.stage = stage
+
+##
+
+canvas.onmousedown = (e) ->
+
+canvas.onmousemove = (e) ->
+
+canvas.onmouseup = (e) ->
+  obj = stage.getObjectUnderPoint e.layerX, e.layerY, 1
+  v = obj.parent
+  # TODO: リンクを作成するために PortView に portId を付与したい
+  if v instanceof MemoryView
+    console.log "memory: #{v}"
+  else if v instanceof FuncView
+    console.log "func: #{v}"
+  else
+    console.log obj
+###
 count = 0
 
 setInterval ->
-  machine.memory.ports[0].setValue count++
+  machine.memoryPorts[0].setValue count++
 , 1000
 
-drawMemory = ->
-  machine.memory.view.draw ctx
+##
 
 drawFrame = (rect, style = "rgba(0, 0, 0, 0.4)") ->
   ctx.beginPath()
@@ -98,9 +131,6 @@ drawLink = (from, to, style = "rgba(0, 0, 0, 0.4)") ->
 drawFrames = ->
   drawFrame f for f in frames
 
-drawFuncs = ->
-  f.view.draw(ctx) for f in machine.funcs
-
 drawLinks = ->
   for fromPort in machine.allPorts()
     for toPort in fromPort.outPorts
@@ -126,15 +156,13 @@ redraw = ->
   rect = canvas.getBoundingClientRect()
   ctx.clearRect 0, 0, rect.width, rect.height
   stage.update()
-  drawMemory()
   drawFrames()
-  drawFuncs()
   drawLinks()
   drawDrag()
 
 getTarget = (pos) ->
   frame = findFrameContainsPoint pos
-  port = machine.portContainsPoint pos
+  port = null
 
   type = TargetType.Canvas
   target = null
@@ -284,3 +312,4 @@ canvas.onmouseup = (e) ->
 
 # do not show context menu on canvas
 canvas.oncontextmenu = (e) -> e.preventDefault()
+###
