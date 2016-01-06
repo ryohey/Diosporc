@@ -1,11 +1,10 @@
 Point = require "./point.coffee"
 Rect = require "./rect.coffee"
-conf = require "./config.coffee"
 
 class Port
   @stage = null
 
-  constructor: (frame, hasInput, hasOutput, parent = null) ->
+  constructor: (frame, hasInput, hasOutput, parent = null, style = {lineWidth: 2, color: "rgba(0, 0, 0, 0.4)"}) ->
     @frame = frame
     @parent = parent
     @hasInput = hasInput
@@ -14,12 +13,25 @@ class Port
     @value = 0
     @received = false
 
+    @view = new createjs.Container()
+    graphics = new createjs.Graphics()
+      .setStrokeStyle style.lineWidth
+      .beginStroke style.color
+      .drawRect 0, 0, frame.width, frame.height
+    border = new createjs.Shape(graphics)
+    @view.addChild border
+    @text = new createjs.Text "", "12px Consolas", style.color
+    @view.addChild @text
+    @view.x = frame.x
+    @view.y = frame.y
+
   getValue: (v) -> @value
   setValue: (v) -> 
     @value = v
     @received = true
     @didSetValue?(this, v)
     @highlight()
+    @text = "#{v}"
     port.setValue(v) for port in @outPorts
 
   highlight: ->
@@ -35,29 +47,9 @@ class Port
     Rect.fromPoint(@frame.point().add(@parent.pos), @frame)
 
   getInputPosition: ->
-    @getFrame().point().add new Point(0, conf.gridSize / 2)
+    @getFrame().point().add new Point(0, @frame.height / 2)
 
   getOutputPosition: ->
-    @getFrame().point().add new Point(conf.gridSize, conf.gridSize / 2)
-
-  draw: (ctx, style = {lineWidth: 2, color: "rgba(0, 0, 0, 0.4)"}) ->
-    f = @getFrame()
-    ctx.beginPath()
-    ctx.rect f.x + 0.5, f.y + 0.5, 
-             f.width,   f.height
-    ctx.lineWidth = style.lineWidth
-    ctx.strokeStyle = style.color
-    ctx.stroke()
-
-    # draw value
-    fontSize = 12
-    lineHeight = fontSize
-    ctx.font = "#{fontSize}px \"Consolas\""
-    ctx.fillStyle = style.color
-    ctx.textAlign = "center"
-    ctx.fillText "#{@value}", 
-                 f.x + 0.5 + conf.gridSize / 2,
-                 f.y + 0.5 + lineHeight / 2 + conf.gridSize / 2, 
-                 conf.gridSize
+    @getFrame().point().add new Point(@frame.width, @frame.height / 2)
 
 module.exports = Port

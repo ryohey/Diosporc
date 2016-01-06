@@ -6,9 +6,9 @@ conf = require "./config.coffee"
 GRID_SIZE = conf.gridSize
 
 class Func
-  constructor: (pos, func = (x) -> x) ->
-    @pos = pos
+  constructor: (func = (x) -> x) ->
     @func = func
+    @view = new createjs.Container()
 
     # setup ports
     @inPorts = (
@@ -19,6 +19,10 @@ class Func
     )
     @outPort = new Port(new Rect(GRID_SIZE, 0, GRID_SIZE, GRID_SIZE), false, true, this)
     @ports = @inPorts.concat [@outPort]
+
+    for p in @ports
+      p.view.backgroundColor = "white" 
+      @view.addChild(p.view)
 
   onInputValueChanged: (port, value) =>
     @updateOutput() if @isReady()
@@ -31,19 +35,5 @@ class Func
 
     # wait next input
     (p.received = false) for p in @inPorts
-
-  draw: (ctx, style = {lineWidth: 2, color: "rgba(0, 0, 0, 0.4)"}) ->
-    # draw background
-    for p in @ports
-      f = p.getFrame()
-      ctx.beginPath()
-      ctx.rect f.x, f.y, f.width, f.height
-      ctx.fillStyle = "white"
-      ctx.fill()
-
-    for p in @ports
-      p.draw ctx, 
-        lineWidth: style.lineWidth
-        color: style.color
 
 module.exports = Func

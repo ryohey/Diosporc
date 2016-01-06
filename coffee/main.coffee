@@ -59,10 +59,7 @@ setInterval ->
 , 1000
 
 drawMemory = ->
-  for p in machine.memory.ports
-    p.draw ctx, 
-      lineWidth: 1
-      color: "rgba(210, 210, 210, 1)"
+  machine.memory.view.draw ctx
 
 drawFrame = (rect, style = "rgba(0, 0, 0, 0.4)") ->
   ctx.beginPath()
@@ -102,7 +99,7 @@ drawFrames = ->
   drawFrame f for f in frames
 
 drawFuncs = ->
-  f.draw(ctx) for f in machine.funcs
+  f.view.draw(ctx) for f in machine.funcs
 
 drawLinks = ->
   for fromPort in machine.allPorts()
@@ -196,8 +193,10 @@ drawDragFramePreview = (dragEvent) ->
   , "rgba(0, 0, 0, 0.2)"
 
 drawDragFuncPreview = (dragEvent) ->
-  f = new Func(dragEvent.current, dragEvent.target.parent.func)
-  f.draw ctx, {color: "rgba(0, 0, 0, 0.2)"}
+  f = new Func dragEvent.target.parent.func
+  f.view.x = dragEvent.current.x
+  f.view.y = dragEvent.current.y
+  f.view.draw ctx
 
 cursorForTargetType = (type) ->
   switch type
@@ -253,7 +252,10 @@ canvas.onmouseup = (e) ->
         # on click
         switch dragEvent.targetType
           when TargetType.Canvas
-            func = new Func(new Point(e.layerX, e.layerY).roundGrid(), (a, b) -> a + b)
+            func = new Func (a, b) -> a + b
+            pos = new Point(e.layerX, e.layerY).roundGrid()
+            func.view.x = pos.x
+            func.view.y = pos.y
             machine.addFunc func
       when DragState.Move
         # finish dragging
