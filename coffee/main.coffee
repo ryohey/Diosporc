@@ -71,13 +71,25 @@ document.stage = stage
 
 ##
 
+fromPort = null
+toPort = null
+
 canvas.onmousedown = (e) ->
+  obj = stage.getObjectUnderPoint e.layerX, e.layerY, 1
+  if obj instanceof PortView
+    fromPort = obj.port
+  console.log "start: #{obj.port}"
 
 canvas.onmousemove = (e) ->
 
 canvas.onmouseup = (e) ->
   obj = stage.getObjectUnderPoint e.layerX, e.layerY, 1
+  if obj instanceof PortView
+    toPort = obj.port
+    actionRouter.addLink fromPort, toPort
+
   v = obj.parent
+  console.log "end: #{obj.port}"
   # TODO: リンクを作成するために PortView に portId を付与したい
   if v instanceof MemoryView
     console.log "memory: #{v}"
@@ -85,14 +97,15 @@ canvas.onmouseup = (e) ->
     console.log "func: #{v}"
   else
     console.log obj
-###
+
 count = 0
 
 setInterval ->
-  machine.memoryPorts[0].setValue count++
+  p = machine.memoryPorts[0]
+  p.setValue count++
 , 1000
 
-##
+###
 
 drawFrame = (rect, style = "rgba(0, 0, 0, 0.4)") ->
   ctx.beginPath()

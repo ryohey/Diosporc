@@ -3,10 +3,10 @@ PortView = require "./port_view.coffee"
 conf = require "./config.coffee"
 
 class MemoryView extends createjs.Container
-  constructor: () ->
+  constructor: (port) ->
     super()
     g = conf.gridSize
-    @portView = new PortView new Rect(0, 0, g, g)
+    @portView = new PortView new Rect(0, 0, g, g), port
     @addChild @portView
 
 module.exports = MemoryView

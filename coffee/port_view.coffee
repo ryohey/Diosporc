@@ -1,8 +1,9 @@
 Point = require "./point.coffee"
 
 class PortView extends createjs.Container
-  constructor: (frame) ->
+  constructor: (frame, port) ->
     super()
+    @setBounds frame.x, frame.y, frame.width, frame.height
     color = "rgba(0, 0, 0, 0.2)"
     graphics = new createjs.Graphics()
       .setStrokeStyle 2
@@ -17,12 +18,17 @@ class PortView extends createjs.Container
     @text.text = "test"
 
     @mouseChildren = false
+    @port = port
+    @port.on "change", @onChange
 
-  setValue: (v) ->
+  onChange: (e) =>
+    @setValue e.target.getValue()
+
+  setValue: (v) =>
     @text.text = "#{v}"
     @highlight()
 
-  highlight: ->
+  highlight: =>
     rect = new createjs.Shape()
     frame = @getBounds()
     rect.graphics.beginFill("rgba(255, 0, 0, 0.2)").drawRect frame.x, frame.y, frame.width, frame.height
@@ -31,11 +37,11 @@ class PortView extends createjs.Container
       .to { alpha: 0 }, 500, createjs.Ease.getPowInOut(2)
       .call (e) => @removeChild e.target
 
-  getInputPosition: ->
+  getInputPosition: =>
     b = getBounds()
     new Point(b.x, b.y + b.height / 2)
 
-  getOutputPosition: ->
+  getOutputPosition: =>
     b = getBounds()
     new Point(b.x + b.width, b.y + b.height / 2)
 

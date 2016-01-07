@@ -10,7 +10,8 @@ class Port
   setValue: (v) -> 
     @value = v
     @received = true
-    port.setValue(v) for port in @outPorts
+    for port in @outPorts
+      port.setValue v
     @dispatchEvent "change"
 
 createjs.EventDispatcher.initialize Port.prototype

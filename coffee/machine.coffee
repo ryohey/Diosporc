@@ -6,34 +6,26 @@ class Machine
     @memoryPorts = []
     @funcs = []
     @ports = []
-    @onPortValueChanged = () -> null
 
   # returns memory id
-  addMemory: ->
-    p = new Port(true, true)
+  addMemory: (p) ->
     @memoryPorts.push p
-    p.on "change", @onChange
     p.memoryId = @memoryPorts.length - 1
     @addPort p
+    p.memoryId
 
   addPort: (p) ->
     @ports.push p
     p.id = @ports.length - 1
 
   # returns func id
-  addFunc: (f) =>
-    func = new Func(f)
+  addFunc: (func) =>
     @funcs.push func
     funcId = @funcs.length - 1
     for p in func.ports
       p.funcId = funcId
-      p.on "change", @onChange
       @addPort p
     funcId
-
-  onChange: (e) =>
-    console.log e
-    @onPortValueChanged e
 
   allPorts: () ->
     funcPorts = _.flatten(@funcs.map (f) -> f.ports) 
