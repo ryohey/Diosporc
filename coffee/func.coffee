@@ -1,6 +1,7 @@
 Point = require "./point.coffee"
 Rect = require "./rect.coffee"
 Port = require "./port.coffee"
+
 class Func
   constructor: (func = ((x) -> x), outNum = 1) ->
     @func = func

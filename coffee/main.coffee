@@ -104,24 +104,24 @@ defaultFuncPos =
   y: 120
 
 $("#button-plus").on "click", ->
-  actionRouter.addFunc defaultFuncPos, (a, b) -> a + b
+  actionRouter.addFunc defaultFuncPos, ((a, b) -> a + b), 1, "+"
 
 $("#button-minus").on "click", ->
-  actionRouter.addFunc defaultFuncPos, (a, b) -> a - b
+  actionRouter.addFunc defaultFuncPos, ((a, b) -> a - b), 1, "-"
 
 $("#button-equal").on "click", ->
-  actionRouter.addFunc defaultFuncPos, (a, b) -> a is b
+  actionRouter.addFunc defaultFuncPos, ((a, b) -> a is b), 1, "="
 
 $("#button-greater").on "click", ->
-  actionRouter.addFunc defaultFuncPos, (a, b) -> a > b
+  actionRouter.addFunc defaultFuncPos, ((a, b) -> a > b), 1, ">"
 
 $("#button-less").on "click", ->
-  actionRouter.addFunc defaultFuncPos, (a, b) -> a < b
+  actionRouter.addFunc defaultFuncPos, ((a, b) -> a < b), 1, "<"
 
 $("#button-if").on "click", ->
   actionRouter.addFunc defaultFuncPos, (a, b) -> 
     if b then [a, null] else [null, a]
-  , 2
+  , 2, "if"
 
 ###
 

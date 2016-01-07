@@ -3,9 +3,14 @@ PortView = require "./port_view.coffee"
 conf = require "./config.coffee"
 
 class FuncView extends createjs.Container
-  constructor: (inPorts, outPorts) ->
+  constructor: (inPorts, outPorts, name) ->
     super()
     g = conf.gridSize
+
+    @text = new createjs.Text "", "12px Consolas", "rgba(0, 0, 0, 0.3)"
+    @text.text = name
+    @text.y = -20
+    @addChild @text
 
     @inPortViews = (for i, port of inPorts
       new PortView new Rect(0, i * g, g, g), port

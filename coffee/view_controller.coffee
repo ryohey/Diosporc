@@ -34,8 +34,8 @@ class ViewController
     @portViews[portId] = v
     @view.addChild v
 
-  onFuncCreated: (funcId, func, pos) =>
-    v = new FuncView func.inPorts, func.outPorts, 1
+  onFuncCreated: (funcId, func, pos, name) =>
+    v = new FuncView func.inPorts, func.outPorts, name
     v.x = pos.x
     v.y = pos.y
     @funcViews[funcId] = v
