@@ -14,7 +14,7 @@ class Machine
   addFunc: (func) =>
     @funcs.push func
     funcId = @funcs.length - 1
-    for p in func.ports
+    for p in func.inPorts.concat func.outPorts
       p.funcId = funcId
       @addPort p
     funcId

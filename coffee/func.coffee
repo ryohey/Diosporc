@@ -7,13 +7,16 @@ class Func
 
     # setup ports
     @inPorts = (for i in [0..func.length - 1]
-        new Port(true, false)
+        p = new Port(true, false)
+        p.index = i
+        p.on "change", @onChange
+        p
     )
-    @outPort = new Port(false, true)
-    @ports = @inPorts.concat [@outPort]
-
-    for p in @ports
-      p.on "change", onChange
+    @outPorts = (for i in [0]
+        p = new Port(true, false)
+        p.index = i
+        p
+    )
 
   onChange: (e) =>
     @updateOutput() if @isReady()
@@ -22,8 +25,8 @@ class Func
     _.all @inPorts, (p) -> p.received
 
   updateOutput: ->
-    @outPort.setValue @func.apply(null, @inPorts.map((p) -> p.getValue()))
-
+    val = @func.apply(null, @inPorts.map((p) -> p.getValue()))
+    @outPorts[0].setValue val
     # wait next input
     (p.received = false) for p in @inPorts
 

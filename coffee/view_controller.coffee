@@ -12,9 +12,9 @@ class ViewController
   portViewForPort: (port) =>
     if port.funcId?
       v = @funcViews[port.funcId]
-      if port.hasInput
+      if port.canWrite
         return v.inPortViews[port.index]
-      if port.hasOutput
+      if port.canRead
         return v.outPortViews[port.index]
     else
       return @portViews[port.id]
@@ -35,12 +35,11 @@ class ViewController
     @view.addChild v
 
   onFuncCreated: (funcId, func, pos) =>
-    v = new FuncView func.func.length, 1
+    v = new FuncView func.inPorts, func.outPorts, 1
     v.x = pos.x
     v.y = pos.y
     @funcViews[funcId] = v
     @view.addChild v
-
   onLinkCreated: (fromPort, toPort) =>
     fromPV = @portViewForPort fromPort
     toPV = @portViewForPort toPort

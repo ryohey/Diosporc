@@ -7,8 +7,9 @@ class FuncView extends createjs.Container
     super()
     g = conf.gridSize
 
+    i = 0
     @inPortViews = (for port in inPorts
-      new PortView new Rect(0, i * g, g, g), port
+      new PortView new Rect(0, i++ * g, g, g), port
     )
 
     @outPortViews = (for port in outPorts
@@ -20,5 +21,6 @@ class FuncView extends createjs.Container
     for v in portViews
       v.setBackgroundColor "white" 
       @addChild v
+
 
 module.exports = FuncView

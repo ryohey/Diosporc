@@ -71,7 +71,13 @@ document.stage = stage
 fromPort = null
 toPort = null
 
+# do not show context menu on canvas
+canvas.oncontextmenu = (e) -> e.preventDefault()
+
 canvas.onmousedown = (e) ->
+  fromPort = null
+  toPort = null
+
   obj = stage.getObjectUnderPoint e.layerX, e.layerY, 1
   if e.button is 2 and obj instanceof PortView
     fromPort = obj.port
@@ -81,12 +87,15 @@ canvas.onmousemove = (e) ->
 
 canvas.onmouseup = (e) ->
   obj = stage.getObjectUnderPoint e.layerX, e.layerY, 1
+  pos = 
+    x: e.layerX
+    y: e.layerY
 
   switch e.button
     when 0
-      actionRouter.addPort
-        x: e.layerX
-        y: e.layerY
+      actionRouter.addPort pos
+    when 1
+      actionRouter.addFunc pos, (a, b) -> a + b
     when 2
       if fromPort? and obj instanceof PortView
         toPort = obj.port
@@ -283,6 +292,4 @@ canvas.onmouseup = (e) ->
 
   dragEvent.state = DragState.None  
 
-# do not show context menu on canvas
-canvas.oncontextmenu = (e) -> e.preventDefault()
 ###

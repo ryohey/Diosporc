@@ -12,9 +12,9 @@ class ActionRouter
     @viewController.onPortCreated portId, p, pos
 
   addFunc: (pos, func) ->
-    func = new Func(f)
-    funcId = @machine.addFunc func
-    @viewController.onFuncCreated funcId, func, pos
+    f = new Func(func)
+    funcId = @machine.addFunc f
+    @viewController.onFuncCreated funcId, f, pos
 
   addLink: (fromPort, toPort) ->
     fromPort.outPorts.push toPort
