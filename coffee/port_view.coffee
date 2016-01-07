@@ -3,7 +3,10 @@ Point = require "./point.coffee"
 class PortView extends createjs.Container
   constructor: (frame, port) ->
     super()
-    @setBounds frame.x, frame.y, frame.width, frame.height
+    @setBounds 0, 0, frame.width, frame.height
+    @x = frame.x
+    @y = frame.y
+
     color = "rgba(0, 0, 0, 0.2)"
     graphics = new createjs.Graphics()
       .setStrokeStyle 2

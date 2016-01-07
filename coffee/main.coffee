@@ -7,7 +7,6 @@ Port = require "./port.coffee"
 Func = require "./func.coffee"
 PortView = require "./port_view.coffee"
 FuncView = require "./func_view.coffee"
-MemoryView = require "./memory_view.coffee"
 ViewController = require "./view_controller.coffee"
 ActionRouter = require "./action_router.coffee"
 
@@ -61,11 +60,9 @@ machine.onPortValueChanged = viewController.onPortValueChanged
 
 actionRouter = new ActionRouter viewController, machine
 
-for dx in [0..MEMORY_COLS - 1]
-  for dy in [0..MEMORY_ROWS - 1]
-    actionRouter.addMemory
-      x: dx * GRID_SIZE
-      y: dy * GRID_SIZE
+actionRouter.addPort
+  x: 0
+  y: 0
 
 document.stage = stage
 
@@ -76,70 +73,33 @@ toPort = null
 
 canvas.onmousedown = (e) ->
   obj = stage.getObjectUnderPoint e.layerX, e.layerY, 1
-  if obj instanceof PortView
+  if e.button is 2 and obj instanceof PortView
     fromPort = obj.port
-  console.log "start: #{obj.port}"
+  console.log "start: #{obj}"
 
 canvas.onmousemove = (e) ->
 
 canvas.onmouseup = (e) ->
   obj = stage.getObjectUnderPoint e.layerX, e.layerY, 1
-  if obj instanceof PortView
-    toPort = obj.port
-    actionRouter.addLink fromPort, toPort
 
-  v = obj.parent
-  console.log "end: #{obj.port}"
-  # TODO: リンクを作成するために PortView に portId を付与したい
-  if v instanceof MemoryView
-    console.log "memory: #{v}"
-  else if v instanceof FuncView
-    console.log "func: #{v}"
-  else
-    console.log obj
+  switch e.button
+    when 0
+      actionRouter.addPort
+        x: e.layerX
+        y: e.layerY
+    when 2
+      if fromPort? and obj instanceof PortView
+        toPort = obj.port
+        actionRouter.addLink fromPort, toPort
 
 count = 0
 
 setInterval ->
-  p = machine.memoryPorts[0]
+  p = machine.ports[0]
   p.setValue count++
 , 1000
 
 ###
-
-drawFrame = (rect, style = "rgba(0, 0, 0, 0.4)") ->
-  ctx.beginPath()
-  ctx.rect rect.x + 0.5, rect.y + 0.5, 
-           rect.width,   rect.height
-  ctx.lineWidth = 2
-  ctx.strokeStyle = style
-  ctx.stroke()
-
-drawLink = (from, to, style = "rgba(0, 0, 0, 0.4)") ->
-  ctx.beginPath()
-  ctx.moveTo from.x, from.y
-  ctx.lineTo to.x, to.y
-  ctx.lineWidth = 2
-  ctx.strokeStyle = style
-  ctx.stroke()
-
-  arrowWidth = 5
-  arrowHeight = 12
-  ctx.beginPath()
-  ctx.moveTo from.x - arrowWidth, from.y - arrowHeight / 2
-  ctx.lineTo from.x - arrowWidth, from.y + arrowHeight / 2
-  ctx.lineTo from.x, from.y
-  ctx.closePath()
-  ctx.fillStyle = style
-  ctx.fill()
-
-  ctx.beginPath()
-  ctx.moveTo to.x, to.y - arrowHeight / 2
-  ctx.lineTo to.x, to.y + arrowHeight / 2
-  ctx.lineTo to.x + arrowWidth, to.y
-  ctx.closePath()
-  ctx.fillStyle = style
-  ctx.fill()
 
 drawFrames = ->
   drawFrame f for f in frames

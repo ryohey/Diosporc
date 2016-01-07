@@ -1,36 +1,37 @@
 PortView = require "./port_view.coffee"
 FuncView = require "./func_view.coffee"
-MemoryView = require "./memory_view.coffee"
 LinkView = require "./link_view.coffee"
+conf = require "./config.coffee"
 
 class ViewController
   constructor: ->
     @view = new createjs.Container()
-    @memoryViews = {}
+    @portViews = {}
     @funcViews = {}
 
   portViewForPort: (port) =>
-    if port.memoryId?
-      v = @memoryViews[port.memoryId]
-      return v.portView
-    else if port.funcId?
+    if port.funcId?
       v = @funcViews[port.funcId]
       if port.hasInput
         return v.inPortViews[port.index]
       if port.hasOutput
         return v.outPortViews[port.index]
-    null
+    else
+      return @portViews[port.id]
 
   onPortValueChanged: (e) =>
     port = e.target
     pv = @portViewForPort(port)
     pv.setValue port.getValue()
 
-  onMemoryCreated: (memoryId, port, pos) =>
-    v = new MemoryView port
-    v.x = pos.x
-    v.y = pos.y
-    @memoryViews[memoryId] = v
+  onPortCreated: (portId, port, pos) =>
+    frame = 
+      x: pos.x
+      y: pos.y
+      width: conf.gridSize
+      height: conf.gridSize
+    v = new PortView frame, port
+    @portViews[portId] = v
     @view.addChild v
 
   onFuncCreated: (funcId, func, pos) =>

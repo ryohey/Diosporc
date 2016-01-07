@@ -6,10 +6,10 @@ class ActionRouter
     @viewController = viewController
     @machine = machine
 
-  addMemory: (pos) ->
+  addPort: (pos) ->
     p = new Port(true, true)
-    memoryId = @machine.addMemory p
-    @viewController.onMemoryCreated memoryId, p, pos
+    portId = @machine.addPort p
+    @viewController.onPortCreated portId, p, pos
 
   addFunc: (pos, func) ->
     func = new Func(f)
