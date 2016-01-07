@@ -1,6 +1,6 @@
 Point = require "./point.coffee"
 
-foreColor = "rgba(0, 0, 0, 0.2)"
+foreColor = "rgba(0, 0, 0, 0.4)"
 
 class PortView extends createjs.Container
   constructor: (frame, port) ->
@@ -15,6 +15,11 @@ class PortView extends createjs.Container
 
     @text = new createjs.Text "", "12px Consolas", foreColor
     @addChild @text
+
+    idText = new createjs.Text "", "12px Consolas", "rgba(0, 128, 0, 0.4)"
+    idText.text = "#{port.id}"
+    idText.y = 20
+    @addChild idText
 
     @mouseChildren = false
     @port = port
@@ -37,7 +42,7 @@ class PortView extends createjs.Container
   setBackgroundColor: (color) ->
     b = @getBounds()
     @background.graphics
-      .setStrokeStyle 2
+      .setStrokeStyle 1
       .beginStroke foreColor
       .beginFill color
       .drawRect 0, 0, b.width, b.height

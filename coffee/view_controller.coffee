@@ -50,6 +50,7 @@ class ViewController
     @linkViews.push v
 
   onLinkRemoved: (fromPort, toPort) =>
+    console.log "remove: #{fromPort.id} to #{toPort.id}"
     for v in @linkViews
       if v.fromPortView.port.id is fromPort.id and v.toPortView.port.id is toPort.id
         @linkViews = _.reject @linkViews, (l) -> l is v

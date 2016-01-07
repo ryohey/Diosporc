@@ -32,6 +32,9 @@ class LinkView extends createjs.Container
     )
     @addChild @toArrow
 
+    @path.on "click", =>
+      console.log "TODO: remove link"
+
     createjs.Ticker.on "tick", @updatePath
 
   onChange: (e) =>
