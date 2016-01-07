@@ -5,10 +5,13 @@ Rect = require "./rect.coffee"
 Machine = require "./machine.coffee"
 Port = require "./port.coffee"
 Func = require "./func.coffee"
+PointerFunc = require "./pointer_func.coffee"
 PortView = require "./port_view.coffee"
 FuncView = require "./func_view.coffee"
 ViewController = require "./view_controller.coffee"
 ActionRouter = require "./action_router.coffee"
+
+##
 
 width = 960
 height = 500
@@ -122,6 +125,17 @@ $("#button-if").on "click", ->
   actionRouter.addFunc defaultFuncPos, (a, b) -> 
     if b then [a, null] else [null, a]
   , 2, "if"
+
+$("#button-const").on "click", ->
+  actionRouter.addFunc defaultFuncPos, ((_) -> 1), 1, "const"
+
+$("#button-alloc").on "click", ->
+  actionRouter.addFunc defaultFuncPos, (_) -> 
+    actionRouter.addPort defaultFuncPos
+  , 1, "alloc"
+
+$("#button-pointer").on "click", ->
+  actionRouter.addPointerFunc defaultFuncPos
 
 ###
 

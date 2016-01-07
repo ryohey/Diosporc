@@ -15,7 +15,6 @@ class PortView extends createjs.Container
 
     @text = new createjs.Text "", "12px Consolas", foreColor
     @addChild @text
-    @text.text = "test"
 
     @mouseChildren = false
     @port = port

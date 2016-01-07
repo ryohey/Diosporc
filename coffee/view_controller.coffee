@@ -8,6 +8,7 @@ class ViewController
     @view = new createjs.Container()
     @portViews = {}
     @funcViews = {}
+    @linkViews = []
 
   portViewForPort: (port) =>
     if port.funcId?
@@ -40,10 +41,18 @@ class ViewController
     v.y = pos.y
     @funcViews[funcId] = v
     @view.addChild v
+
   onLinkCreated: (fromPort, toPort) =>
     fromPV = @portViewForPort fromPort
     toPV = @portViewForPort toPort
     v = new LinkView fromPV, toPV
     @view.addChild v
+    @linkViews.push v
+
+  onLinkRemoved: (fromPort, toPort) =>
+    for v in @linkViews
+      if v.fromPortView.port.id is fromPort.id and v.toPortView.port.id is toPort.id
+        @linkViews = _.reject @linkViews, (l) -> l is v
+        @view.removeChild v
 
 module.exports = ViewController

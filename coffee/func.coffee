@@ -1,5 +1,3 @@
-Point = require "./point.coffee"
-Rect = require "./rect.coffee"
 Port = require "./port.coffee"
 
 class Func
@@ -29,7 +27,7 @@ class Func
     args = @inPorts.map (p) -> p.getValue()
     val = @func.apply null, args
     if @outPorts.length is 1
-      @outPorts[0].setValue val
+      @outPorts[0].setValue val if val?
     else
       console.log @func.toString()
       @outPorts[i].setValue(v) for i, v of val when v?
