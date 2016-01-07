@@ -22,6 +22,19 @@ class PortView extends createjs.Container
     @setValue port.getValue()
     @port.on "change", @onChange
 
+    @dragEnabled = true
+
+    @on "mousedown", (e) =>
+      return unless @dragEnabled
+      return if e.nativeEvent.button isnt 0
+      @offset = new createjs.Point @x - e.stageX, @y - e.stageY
+
+    @on "pressmove", (e) =>
+      return unless @dragEnabled
+      return if e.nativeEvent.button isnt 0
+      @x = e.stageX + @offset.x
+      @y = e.stageY + @offset.y
+
   setBackgroundColor: (color) ->
     b = @getBounds()
     @background.graphics

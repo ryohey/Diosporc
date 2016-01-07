@@ -2,7 +2,7 @@ Point = require "./point.coffee"
 Rect = require "./rect.coffee"
 Port = require "./port.coffee"
 class Func
-  constructor: (func = (x) -> x) ->
+  constructor: (func = ((x) -> x), outNum = 1) ->
     @func = func
 
     # setup ports
@@ -12,8 +12,8 @@ class Func
         p.on "change", @onChange
         p
     )
-    @outPorts = (for i in [0]
-        p = new Port(true, false)
+    @outPorts = (for i in [0..outNum - 1]
+        p = new Port(false, true)
         p.index = i
         p
     )
@@ -25,8 +25,14 @@ class Func
     _.all @inPorts, (p) -> p.received
 
   updateOutput: ->
-    val = @func.apply(null, @inPorts.map((p) -> p.getValue()))
-    @outPorts[0].setValue val
+    args = @inPorts.map (p) -> p.getValue()
+    val = @func.apply null, args
+    if @outPorts.length is 1
+      @outPorts[0].setValue val
+    else
+      console.log @func.toString()
+      @outPorts[i].setValue(v) for i, v of val when v?
+
     # wait next input
     (p.received = false) for p in @inPorts
 

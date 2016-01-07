@@ -25,8 +25,6 @@ stage = new createjs.Stage "canvas"
 createjs.Ticker.setFPS 60
 createjs.Ticker.addEventListener "tick", stage
 
-$ = (q) -> document.querySelector(q)
-
 frames = []
 
 DragState = 
@@ -68,38 +66,31 @@ document.stage = stage
 
 ##
 
-fromPort = null
-toPort = null
+fromObj = null
 
 # do not show context menu on canvas
 canvas.oncontextmenu = (e) -> e.preventDefault()
 
 canvas.onmousedown = (e) ->
-  fromPort = null
-  toPort = null
-
-  obj = stage.getObjectUnderPoint e.layerX, e.layerY, 1
-  if e.button is 2 and obj instanceof PortView
-    fromPort = obj.port
-  console.log "start: #{obj}"
+  fromObj = stage.getObjectUnderPoint e.layerX, e.layerY, 1
 
 canvas.onmousemove = (e) ->
 
 canvas.onmouseup = (e) ->
-  obj = stage.getObjectUnderPoint e.layerX, e.layerY, 1
+  toObj = stage.getObjectUnderPoint e.layerX, e.layerY, 1
   pos = 
     x: e.layerX
     y: e.layerY
 
   switch e.button
     when 0
-      actionRouter.addPort pos
+      if not fromObj? and not toObj?
+        actionRouter.addPort pos
     when 1
       actionRouter.addFunc pos, (a, b) -> a + b
     when 2
-      if fromPort? and obj instanceof PortView
-        toPort = obj.port
-        actionRouter.addLink fromPort, toPort
+      if fromObj instanceof PortView and toObj instanceof PortView
+        actionRouter.addLink fromObj.port, toObj.port
 
 count = 0
 
@@ -107,6 +98,30 @@ setInterval ->
   p = machine.ports[0]
   p.setValue count++
 , 1000
+
+defaultFuncPos = 
+  x: 220
+  y: 120
+
+$("#button-plus").on "click", ->
+  actionRouter.addFunc defaultFuncPos, (a, b) -> a + b
+
+$("#button-minus").on "click", ->
+  actionRouter.addFunc defaultFuncPos, (a, b) -> a - b
+
+$("#button-equal").on "click", ->
+  actionRouter.addFunc defaultFuncPos, (a, b) -> a is b
+
+$("#button-greater").on "click", ->
+  actionRouter.addFunc defaultFuncPos, (a, b) -> a > b
+
+$("#button-less").on "click", ->
+  actionRouter.addFunc defaultFuncPos, (a, b) -> a < b
+
+$("#button-if").on "click", ->
+  actionRouter.addFunc defaultFuncPos, (a, b) -> 
+    if b then [a, null] else [null, a]
+  , 2
 
 ###
 

@@ -7,12 +7,12 @@ class ActionRouter
     @machine = machine
 
   addPort: (pos) ->
-    p = new Port(true, true)
+    p = new Port true, true
     portId = @machine.addPort p
     @viewController.onPortCreated portId, p, pos
 
-  addFunc: (pos, func) ->
-    f = new Func(func)
+  addFunc: (pos, func, outNum = 1) ->
+    f = new Func func, outNum
     funcId = @machine.addFunc f
     @viewController.onFuncCreated funcId, f, pos
 

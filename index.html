@@ -3,7 +3,12 @@
 <link rel="stylesheet" type="text/css" href="style.css">
 <body>
 <div id="toolbar">
-	<a class="button run">Run</a>
+  <a class="button func" id="button-plus">+</a>
+	<a class="button func" id="button-minus">-</a>
+  <a class="button func" id="button-equal">=</a>
+  <a class="button func" id="button-greater">&gt;</a>
+  <a class="button func" id="button-less">&lt;</a>
+  <a class="button func" id="button-if">if</a>
 </div>
 <canvas id="canvas" width="960" height="640"></canvas>
 <div id="machine"></div>
@@ -11,5 +16,6 @@
 <script src="http://underscorejs.org/underscore.js"></script>
 <script src="js/easeljs-0.8.2.combined.js"></script>
 <script src="js/tweenjs-0.6.2.combined.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 <script src="main.js"></script>
 </body>

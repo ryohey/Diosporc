@@ -32,7 +32,7 @@ class LinkView extends createjs.Container
     )
     @addChild @toArrow
 
-    @updatePath()
+    createjs.Ticker.on "tick", @updatePath
 
   onChange: (e) =>
     console.dir e.target
@@ -49,6 +49,7 @@ class LinkView extends createjs.Container
     @toArrow.y = toPoint.y - arrowHeight / 2
 
     @path.graphics
+      .clear()
       .setStrokeStyle 2
       .beginStroke color
       .moveTo fromPoint.x, fromPoint.y
