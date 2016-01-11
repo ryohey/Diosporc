@@ -1,6 +1,7 @@
 Rect = require "./rect.coffee"
 PortView = require "./port_view.coffee"
 conf = require "./config.coffee"
+ActionRouter = require "./action_router.coffee"
 
 class FuncView extends createjs.Container
   constructor: (inPorts, outPorts, name) ->
@@ -27,13 +28,22 @@ class FuncView extends createjs.Container
       v.dragEnabled = false
       @addChild v
 
+    @dragged = false
+
     @on "mousedown", (e) =>
       return if e.nativeEvent.button isnt 0
       @offset = new createjs.Point @x - e.stageX, @y - e.stageY
+      @dragged = false
 
     @on "pressmove", (e) =>
       return if e.nativeEvent.button isnt 0
       @x = e.stageX + @offset.x
       @y = e.stageY + @offset.y
+      @dragged = true
+
+    @on "click", (e) =>
+      return if e.nativeEvent.button isnt 0
+      return if @dragged
+      ActionRouter.instance.removeFunc @inPortViews[0].port.funcId
 
 module.exports = FuncView

@@ -35,12 +35,22 @@ class ViewController
     @portViews[portId] = v
     @view.addChild v
 
+  onPortRemoved: (portId) ->
+    v = @portViews[portId]
+    delete @portViews[portId]
+    @view.removeChild v
+
   onFuncCreated: (funcId, func, pos, name) =>
     v = new FuncView func.inPorts, func.outPorts, name
     v.x = pos.x
     v.y = pos.y
     @funcViews[funcId] = v
     @view.addChild v
+
+  onFuncRemoved: (funcId) ->
+    v = @funcViews[funcId]
+    delete @funcViews[funcId]
+    @view.removeChild v
 
   onLinkCreated: (fromPort, toPort) =>
     fromPV = @portViewForPort fromPort
@@ -49,9 +59,9 @@ class ViewController
     @view.addChild v
     @linkViews.push v
 
-  onLinkRemoved: (fromPort, toPort) =>
+  onLinkRemoved: (fromPortId, toPortId) =>
     for v in @linkViews
-      if v.fromPortView.port.id is fromPort.id and v.toPortView.port.id is toPort.id
+      if v.fromPortView.port.id is fromPortId and v.toPortView.port.id is toPortId
         @linkViews = _.reject @linkViews, (l) -> l is v
         @view.removeChild v
 

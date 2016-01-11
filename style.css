@@ -32,11 +32,6 @@ body {
 }
 
 canvas#canvas {
-  width: 960px;
-  height: 640px;
-  position: absolute;
-  z-index: -100;
-  /* top: 0; */
 }
 
 div#machine {

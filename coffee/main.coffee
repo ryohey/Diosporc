@@ -14,7 +14,7 @@ ActionRouter = require "./action_router.coffee"
 ##
 
 width = 960
-height = 500
+height = 6400
 GRID_SIZE = conf.gridSize
 FRAME_EDGE_SIZE = 3
 FUNC_RADIUS = GRID_SIZE / 3
@@ -60,6 +60,7 @@ machine = new Machine width, height
 machine.onPortValueChanged = viewController.onPortValueChanged
 
 actionRouter = new ActionRouter viewController, machine
+ActionRouter.instance = actionRouter
 
 actionRouter.addPort
   x: 0
@@ -86,9 +87,6 @@ canvas.onmouseup = (e) ->
     y: e.layerY
 
   switch e.button
-    when 0
-      if not fromObj? and not toObj?
-        actionRouter.addPort pos
     when 1
       actionRouter.addFunc pos, (a, b) -> a + b
     when 2

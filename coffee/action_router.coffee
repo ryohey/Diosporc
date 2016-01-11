@@ -2,11 +2,14 @@ Port = require "./port.coffee"
 Func = require "./func.coffee"
 PointerFunc = require "./pointer_func.coffee"
 AllocFunc = require "./alloc_func.coffee"
+MemoryFunc = require "./memory_func.coffee"
 conf = require "./config.coffee"
 
 # ユーザーが行う抽象的な動作 (addPortなど) の具体的な処理を行う
 # viewController, machine に振り分けるのがメイン
 class ActionRouter
+  @instance = null
+
   constructor: (viewController, machine) ->
     @viewController = viewController
     @machine = machine
@@ -17,23 +20,30 @@ class ActionRouter
     @viewController.onPortCreated portId, p, pos
     p
 
+  removePort: (id) ->
+    @machine.removePort id
+    @viewController.onPortRemoved id
+
+  addFunc_: (func, pos, name) ->
+    funcId = @machine.addFunc func
+    @viewController.onFuncCreated funcId, func, pos, name
+    func
+
+  removeFunc: (id) ->
+    @machine.removeFunc id
+    @viewController.onFuncRemoved id
+
   addFunc: (pos, func, outNum = 1, name = null) ->
     f = new Func func, outNum
-    funcId = @machine.addFunc f
-    @viewController.onFuncCreated funcId, f, pos, name
-    f
+    @addFunc_ f, pos, name
 
   addPointerFunc: (pos) ->
     f = new PointerFunc @machine, @
-    funcId = @machine.addFunc f
-    @viewController.onFuncCreated funcId, f, pos, "pointer"
-    f
+    @addFunc_ f, pos, "pointer"
 
   addAllocFunc: (pos) ->
     f = new AllocFunc @machine, @
-    funcId = @machine.addFunc f
-    @viewController.onFuncCreated funcId, f, pos, "alloc"
-    f
+    @addFunc_ f, pos, "alloc"
 
   addLink: (fromPort, toPort) ->
     fromPort.outPorts.push toPort
@@ -41,23 +51,28 @@ class ActionRouter
 
   removeLink: (fromPort, toPort) ->
     fromPort.outPorts = _.reject fromPort.outPorts, (out) -> out.id is toPort.id
-    @viewController.onLinkRemoved fromPort, toPort
+    @viewController.onLinkRemoved fromPort.id, toPort.id
 
   ## for debug
 
   # 文字列をメモリに読み込む
   addPortFromString: (pos, string) =>
-    ports = (for i, char of string
-      p = @addPort
+    f = @addFunc_ new MemoryFunc(v)
+    , pos
+    , "memory #{v}"
+
+    memories = (for i, char of string
+      v = char.charCodeAt(0)
+      @addFunc_ new MemoryFunc(v)
+      ,
         x: pos.x
-        y: pos.y + (parseInt(i) + 1) * (conf.gridSize)
-      p.setValue char.charCodeAt(0)
-      p
+        y: pos.y + (parseInt(i) + 1) * conf.gridSize * 3
+      , "memory #{v}"
     )
 
-    id = ports[0].id
+    f.inPorts[1].setValue memories[0].inPorts[0].id
 
-    @addFunc pos, ((_) -> id), 1, "const"
+   # @addFunc pos, ((_) -> id), 1, "const"
 
 
 module.exports = ActionRouter

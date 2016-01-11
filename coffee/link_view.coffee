@@ -1,3 +1,4 @@
+ActionRouter = require "./action_router.coffee"
 conf = require "./config.coffee"
 
 color = "rgba(0, 0, 0, 0.2)"
@@ -33,7 +34,7 @@ class LinkView extends createjs.Container
     @addChild @toArrow
 
     @path.on "click", =>
-      console.log "TODO: remove link"
+      ActionRouter.instance.removeLink fromPortView.port, toPortView.port
 
     createjs.Ticker.on "tick", @updatePath
 
