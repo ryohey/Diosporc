@@ -6,16 +6,17 @@ class Func
 
     # setup ports
     @inPorts = (for i in [0..func.length - 1]
-        p = new Port(true, false)
-        p.index = i
-        p.on "change", @onChange
-        p
+      p = new Port(true, false)
+      p.index = i
+      p.on "change", @onChange
+      p
     )
     @outPorts = (for i in [0..outNum - 1]
-        p = new Port(false, true)
-        p.index = i
-        p
-    )
+      p = new Port(false, true)
+      p.index = i
+      p
+    ) if outNum > 0
+    @outPorts ?= []
 
   onChange: (e) =>
     @updateOutput() if @isReady()
@@ -29,7 +30,6 @@ class Func
     if @outPorts.length is 1
       @outPorts[0].setValue val if val?
     else
-      console.log @func.toString()
       @outPorts[i].setValue(v) for i, v of val when v?
 
     # wait next input
