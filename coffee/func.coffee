@@ -19,10 +19,7 @@ class Func
     @outPorts ?= []
 
   onChange: (e) =>
-    @updateOutput() if @isReady()
-    
-  isReady: ->
-    _.all @inPorts, (p) -> p.received
+    @updateOutput()
 
   updateOutput: ->
     args = @inPorts.map (p) -> p.getValue()
@@ -31,8 +28,5 @@ class Func
       @outPorts[0].setValue val if val?
     else
       @outPorts[i].setValue(v) for i, v of val when v?
-
-    # wait next input
-    (p.received = false) for p in @inPorts
 
 module.exports = Func

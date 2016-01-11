@@ -46,11 +46,11 @@ class ActionRouter
     @addFunc_ f, pos, "alloc"
 
   addLink: (fromPort, toPort) ->
-    fromPort.outPorts.push toPort
+    @machine.addLink [fromPort.id, toPort.id]
     @viewController.onLinkCreated fromPort, toPort
 
   removeLink: (fromPort, toPort) ->
-    fromPort.outPorts = _.reject fromPort.outPorts, (out) -> out.id is toPort.id
+    @machine.removeLink [fromPort, toPort]
     @viewController.onLinkRemoved fromPort.id, toPort.id
 
   ## for debug
