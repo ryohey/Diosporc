@@ -103,6 +103,9 @@ $("#button-plus").on "click", ->
 $("#button-minus").on "click", ->
   actionRouter.addFunc defaultFuncPos, ((a, b) -> a - b), 1, "-"
 
+$("#button-multi").on "click", ->
+  actionRouter.addFunc defaultFuncPos, ((a, b) -> a * b), 1, "*"
+
 $("#button-equal").on "click", ->
   actionRouter.addFunc defaultFuncPos, ((a, b) -> a is b), 1, "="
 

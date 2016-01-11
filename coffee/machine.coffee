@@ -28,7 +28,7 @@ class Machine
     delete @funcs[funcId]
     for p in f.inPorts.concat f.outPorts
       @removePort p.id
-    @ports = _.reject @ports, (p) -> p.funcId is funcId
+    @ports = _.reject @ports, (p) -> p?.funcId? and p.funcId is funcId
 
   allPorts: () =>
     funcPorts = _.flatten(@funcs.map (f) -> f.ports) 

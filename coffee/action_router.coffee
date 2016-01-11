@@ -59,7 +59,7 @@ class ActionRouter
   addPortFromString: (pos, string) =>
     f = @addFunc_ new MemoryFunc(v)
     , pos
-    , "memory #{v}"
+    , "memory pointer"
 
     memories = (for i, char of string
       v = char.charCodeAt(0)
@@ -70,7 +70,7 @@ class ActionRouter
       , "memory #{v}"
     )
 
-    f.inPorts[1].setValue memories[0].inPorts[0].id
+    f.inPorts[1].setValue f.outPorts[0].id
 
    # @addFunc pos, ((_) -> id), 1, "const"
 
