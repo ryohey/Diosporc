@@ -87,11 +87,14 @@ canvas.onmouseup = (e) ->
     y: e.layerY
 
   switch e.button
+    when 0
+      if not toObj? and not fromObj?
+        actionRouter.addPort pos
     when 1
       actionRouter.addFunc pos, (a, b) -> a + b
     when 2
       if fromObj instanceof PortView and toObj instanceof PortView
-        actionRouter.addLink fromObj.port, toObj.port
+        actionRouter.addLink fromObj.port.id, toObj.port.id
 
 defaultFuncPos = 
   x: 220

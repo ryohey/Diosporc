@@ -45,32 +45,33 @@ class ActionRouter
     f = new AllocFunc @machine, @
     @addFunc_ f, pos, "alloc"
 
-  addLink: (fromPort, toPort) ->
-    @machine.addLink [fromPort.id, toPort.id]
+  addLink: (fromPortId, toPortId) ->
+    fromPort = @machine.ports[fromPortId]
+    toPort = @machine.ports[toPortId]
+    toPort.setValue fromPort.getValue()
+    @machine.addLink [fromPortId, toPortId]
     @viewController.onLinkCreated fromPort, toPort
 
-  removeLink: (fromPort, toPort) ->
-    @machine.removeLink [fromPort, toPort]
-    @viewController.onLinkRemoved fromPort.id, toPort.id
+  removeLink: (fromPortId, toPortId) ->
+    @machine.removeLink [fromPortId, toPortId]
+    @viewController.onLinkRemoved fromPortId, toPortId
 
   ## for debug
 
   # 文字列をメモリに読み込む
   addPortFromString: (pos, string) =>
-    f = @addFunc_ new MemoryFunc(v)
-    , pos
-    , "memory pointer"
+    pointerPort = @addPort pos
 
-    memories = (for i, char of string
+    ports = (for i, char of string
       v = char.charCodeAt(0)
-      @addFunc_ new MemoryFunc(v)
-      ,
+      p = @addPort
         x: pos.x
-        y: pos.y + (parseInt(i) + 1) * conf.gridSize * 3
-      , "memory #{v}"
+        y: pos.y + (parseInt(i) + 1) * conf.gridSize
+      p.setValue v
+      p
     )
 
-    f.inPorts[1].setValue f.outPorts[0].id
+    pointerPort.setValue ports[0].id
 
    # @addFunc pos, ((_) -> id), 1, "const"
 

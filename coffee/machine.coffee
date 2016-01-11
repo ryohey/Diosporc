@@ -49,7 +49,7 @@ class Machine
   removeLink: (portIds) =>
     link = @findLinkByIds portIds
     return unless link?
-    ports = portIds.map (id) -> @ports[id]
+    ports = portIds.map (id) => @ports[id]
     link.removePort(p) for p in ports
 
   allPorts: () =>

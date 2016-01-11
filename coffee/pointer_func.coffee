@@ -18,23 +18,17 @@ class PointerFunc
       p
     )
 
-  updateLink: =>
-    toPort = @outPorts[0]
+    @prevId = -1
 
-    # clear the previous link
-    for p in @machine.ports
-      for out in p.outPorts
-        if out is toPort
-          @actionRouter.removeLink(p, toPort)
+  updateLink: =>
+    toPortId = @outPorts[0].id
+
+    if @prevId > 0
+      @actionRouter.removeLink @prevId, toPortId
 
     fromId = @inPorts[0].getValue()
+    @actionRouter.addLink fromId, toPortId
 
-    # make the link
-    p = @machine.ports[fromId]
-    if p and p.canWrite
-      @actionRouter.addLink p, toPort
-
-    # wait next input
-    (p.received = false) for p in @inPorts
+    @prevId = @inPorts[0].getValue()
 
 module.exports = PointerFunc
