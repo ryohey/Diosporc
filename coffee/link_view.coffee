@@ -34,7 +34,7 @@ class LinkView extends createjs.Container
     @addChild @toArrow
 
     @path.on "click", =>
-      ActionRouter.instance.removeLink fromPortView.port, toPortView.port
+      ActionRouter.instance.removeLink fromPortView.port.id, toPortView.port.id
 
     createjs.Ticker.on "tick", @updatePath
 

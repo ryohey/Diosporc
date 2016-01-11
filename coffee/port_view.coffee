@@ -1,4 +1,5 @@
 Point = require "./point.coffee"
+ActionRouter = require "./action_router.coffee"
 
 foreColor = "rgba(0, 0, 0, 0.4)"
 
@@ -26,18 +27,32 @@ class PortView extends createjs.Container
     @setValue port.getValue()
     @port.on "change", @onChange
 
-    @dragEnabled = true
+    @uiEnabled = true
 
     @on "mousedown", (e) =>
-      return unless @dragEnabled
+      return unless @uiEnabled
+      @dragged = false
       return if e.nativeEvent.button isnt 0
       @offset = new createjs.Point @x - e.stageX, @y - e.stageY
 
     @on "pressmove", (e) =>
-      return unless @dragEnabled
+      return unless @uiEnabled
+      @dragged = true
       return if e.nativeEvent.button isnt 0
       @x = e.stageX + @offset.x
       @y = e.stageY + @offset.y
+
+    @on "click", (e) =>
+      return unless @uiEnabled
+      return if @dragged
+      @dragged = false
+      switch e.nativeEvent.button
+        when 0 
+          ActionRouter.instance.removePort @port.id
+        when 1
+          @port.setValue 0
+        when 2
+          @port.setValue @port.getValue() + 1
 
   setBackgroundColor: (color) ->
     b = @getBounds()

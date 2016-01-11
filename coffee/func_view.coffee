@@ -25,7 +25,7 @@ class FuncView extends createjs.Container
 
     for v in portViews
       v.setBackgroundColor "white" 
-      v.dragEnabled = false
+      v.uiEnabled = false
       @addChild v
 
     @dragged = false

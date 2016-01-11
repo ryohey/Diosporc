@@ -90,10 +90,8 @@ canvas.onmouseup = (e) ->
     when 0
       if not toObj? and not fromObj?
         actionRouter.addPort pos
-    when 1
-      actionRouter.addFunc pos, (a, b) -> a + b
     when 2
-      if fromObj instanceof PortView and toObj instanceof PortView
+      if fromObj instanceof PortView and toObj instanceof PortView and fromObj isnt toObj
         actionRouter.addLink fromObj.port.id, toObj.port.id
 
 defaultFuncPos = 
@@ -108,6 +106,9 @@ $("#button-minus").on "click", ->
 
 $("#button-multi").on "click", ->
   actionRouter.addFunc defaultFuncPos, ((a, b) -> a * b), 1, "*"
+  
+$("#button-div").on "click", ->
+  actionRouter.addFunc defaultFuncPos, ((a, b) -> a / b), 1, "/"
 
 $("#button-equal").on "click", ->
   actionRouter.addFunc defaultFuncPos, ((a, b) -> a is b), 1, "="
@@ -141,3 +142,6 @@ $("#button-string").on "click", ->
 
 $("#button-stdout").on "click", ->
   actionRouter.addFunc defaultFuncPos, ((a) -> console.log(a)), 0, "stdout"
+
+$("#button-tochar").on "click", ->
+  actionRouter.addFunc defaultFuncPos, ((a) -> String.fromCharCode(a)), 1, "toChar"
