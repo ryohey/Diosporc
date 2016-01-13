@@ -42,8 +42,8 @@ class FuncView extends createjs.Container
       @dragged = true
 
     @on "click", (e) =>
-      return if e.nativeEvent.button isnt 0
       return if @dragged
-      ActionRouter.instance.removeFunc @inPortViews[0].port.funcId
+      if e.nativeEvent.button is 1
+        ActionRouter.instance.removeFunc @inPortViews[0].port.funcId
 
 module.exports = FuncView

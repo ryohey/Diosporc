@@ -48,11 +48,13 @@ class PortView extends createjs.Container
       @dragged = false
       switch e.nativeEvent.button
         when 0 
-          ActionRouter.instance.removePort @port.id
-        when 1
-          @port.setValue 0
-        when 2
           @port.setValue @port.getValue() + 1
+        when 1
+          ActionRouter.instance.removePort @port.id
+        when 2
+          @port.setValue @port.getValue() - 1
+
+    @on "dblclick", =>
 
   setBackgroundColor: (color) ->
     b = @getBounds()
