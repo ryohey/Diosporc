@@ -145,3 +145,35 @@ $("#button-stdout").on "click", ->
 
 $("#button-tochar").on "click", ->
   actionRouter.addFunc defaultFuncPos, ((a) -> String.fromCharCode(a)), 1, "toChar"
+
+logTm = (tm) ->
+  text = tm.colors
+    .map (s, i) -> if i is tm.pos then "%c" + ["▲", "▼"][tm.state] else "%c　"
+    .join ""
+  style = tm.colors.map (c) -> "background-color:" + ["white", "yellow", "orange"][c] + ";"
+  console.log.apply console, [text].concat style
+
+# [state, color] = [state, color, offset]
+rule = {}
+rule[[0, 2]] = [0, 1, -1]
+rule[[0, 1]] = [0, 2, -1]
+rule[[0, 0]] = [1, 1, 1] 
+rule[[1, 2]] = [0, 0, 1]
+rule[[1, 1]] = [1, 2, 1] 
+rule[[1, 0]] = [0, 2, -1]
+
+stepTm = (tm) ->
+  r = rule[[tm.state, tm.colors[tm.pos]]]
+  tm.state = r[0]
+  tm.colors[tm.pos] = r[1]
+  tm.pos = tm.pos + r[2]
+
+tm =
+  colors: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  pos: 3
+  state: 0
+
+for _ in [0..100]
+  logTm tm
+  stepTm tm
+  
