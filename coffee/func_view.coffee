@@ -6,7 +6,7 @@ ActionRouter = require "./action_router.coffee"
 class FuncView extends createjs.Container
   constructor: (inPorts, outPorts, name) ->
     super()
-    g = conf.gridSize
+    g = conf.gridSize　/ 2
 
     @text = new createjs.Text "", "12px Consolas", "rgba(0, 0, 0, 0.3)"
     @text.text = name
@@ -31,15 +31,15 @@ class FuncView extends createjs.Container
     @dragged = false
 
     @on "mousedown", (e) =>
+      @dragged = false
       return if e.nativeEvent.button isnt 0
       @offset = new createjs.Point @x - e.stageX, @y - e.stageY
-      @dragged = false
 
     @on "pressmove", (e) =>
+      @dragged = true
       return if e.nativeEvent.button isnt 0
       @x = e.stageX + @offset.x
       @y = e.stageY + @offset.y
-      @dragged = true
 
     @on "click", (e) =>
       return if @dragged

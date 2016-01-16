@@ -59,21 +59,19 @@ class ActionRouter
   ## for debug
 
   # 文字列をメモリに読み込む
+  # [配列の先頭のアドレス、サイズ、配列...]
   addPortFromString: (pos, string) =>
-    pointerPort = @addPort pos
+    values = [0, string.length]
+    values = values.concat (c.charCodeAt(0) for c in string)
 
-    ports = (for i, char of string
-      v = char.charCodeAt(0)
+    ports = (for i, v of values
       p = @addPort
         x: pos.x
-        y: pos.y + (parseInt(i) + 1) * conf.gridSize
+        y: pos.y + parseInt(i) * conf.gridSize
       p.setValue v
       p
     )
 
-    pointerPort.setValue ports[0].id
-
-   # @addFunc pos, ((_) -> id), 1, "const"
-
+    ports[0].setValue ports[2].id
 
 module.exports = ActionRouter

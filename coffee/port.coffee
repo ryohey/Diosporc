@@ -9,6 +9,7 @@ class Port
     changed = @value isnt v
     @value = v
     @dispatchEvent("change") if changed
+    @
 
 createjs.EventDispatcher.initialize Port.prototype
 

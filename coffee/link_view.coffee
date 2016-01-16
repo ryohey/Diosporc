@@ -1,5 +1,4 @@
 ActionRouter = require "./action_router.coffee"
-conf = require "./config.coffee"
 
 color = "rgba(0, 0, 0, 0.2)"
 arrowWidth = 6
@@ -44,8 +43,8 @@ class LinkView extends createjs.Container
     @updatePath()
 
   updatePath: =>
-    fromPoint = @fromPortView.localToGlobal conf.gridSize, conf.gridSize / 2
-    toPoint = @toPortView.localToGlobal 0, conf.gridSize / 2
+    fromPoint = @fromPortView.localToGlobal @fromPortView.getBounds().width, @fromPortView.getBounds().height / 2
+    toPoint = @toPortView.localToGlobal 0, @toPortView.getBounds().height / 2
 
     @fromArrow.x = fromPoint.x
     @fromArrow.y = fromPoint.y - arrowHeight / 2

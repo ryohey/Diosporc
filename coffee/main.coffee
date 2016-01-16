@@ -110,20 +110,22 @@ $("#button-multi").on "click", ->
 $("#button-div").on "click", ->
   actionRouter.addFunc defaultFuncPos, ((a, b) -> a / b), 1, "/"
 
+boolToNum = (b) -> if b then 1 else 0
+
 $("#button-equal").on "click", ->
-  actionRouter.addFunc defaultFuncPos, ((a, b) -> a is b), 1, "="
+  actionRouter.addFunc defaultFuncPos, ((a, b) -> boolToNum(a is b)), 1, "="
 
 $("#button-and").on "click", ->
-  actionRouter.addFunc defaultFuncPos, ((a, b) -> a and b), 1, "and"
+  actionRouter.addFunc defaultFuncPos, ((a, b) -> boolToNum(a and b)), 1, "and"
 
 $("#button-or").on "click", ->
-  actionRouter.addFunc defaultFuncPos, ((a, b) -> a or b), 1, "or"
+  actionRouter.addFunc defaultFuncPos, ((a, b) -> boolToNum(a or b)), 1, "or"
 
 $("#button-greater").on "click", ->
-  actionRouter.addFunc defaultFuncPos, ((a, b) -> a > b), 1, ">"
+  actionRouter.addFunc defaultFuncPos, ((a, b) -> boolToNum(a > b)), 1, ">"
 
 $("#button-less").on "click", ->
-  actionRouter.addFunc defaultFuncPos, ((a, b) -> a < b), 1, "<"
+  actionRouter.addFunc defaultFuncPos, ((a, b) -> boolToNum(a < b)), 1, "<"
 
 $("#button-if").on "click", ->
   actionRouter.addFunc defaultFuncPos, (flag, a, b) -> 
