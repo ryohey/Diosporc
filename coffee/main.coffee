@@ -122,9 +122,6 @@ addFunc = (json) ->
   for e in json.edges
     actionRouter.addLinks e
 
-$("#button-if2").on "click", ->
-  $.getJSON "files/if.json", (d) -> addFunc d
-
 $("#button-plus").on "click", ->
   $.getJSON "files/plus.json", (d) -> addFunc d
 
