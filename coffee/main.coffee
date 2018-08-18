@@ -98,8 +98,35 @@ defaultFuncPos =
   x: 220
   y: 120
 
+getJSONSync = (url) ->
+  result = null
+  $.ajax
+    type: "GET",
+    url: url,
+    dataType: "json",
+    success: (d) -> result = d,
+    async: false
+  result
+
+addFunc = (json) ->   
+  for n in json.nodes
+    if n.script?
+      f = new Function n.script[0], n.script[1]
+      f = actionRouter.addFunc n.position, f, 1, n.name
+
+    else if n.src?
+      addFunc getJSONSync "files/#{n.src}"
+    else if n.value?
+      actionRouter.addPort pos, defaultFuncPos
+
+  for e in json.edges
+    actionRouter.addLinks e
+
+$("#button-if2").on "click", ->
+  $.getJSON "files/if.json", (d) -> addFunc d
+
 $("#button-plus").on "click", ->
-  actionRouter.addFunc defaultFuncPos, ((a, b) -> a + b), 1, "+"
+  $.getJSON "files/plus.json", (d) -> addFunc d
 
 $("#button-minus").on "click", ->
   actionRouter.addFunc defaultFuncPos, ((a, b) -> a - b), 1, "-"
@@ -131,9 +158,6 @@ $("#button-if").on "click", ->
   actionRouter.addFunc defaultFuncPos, (flag, a, b) -> 
     if flag then a else b
   , 1, "if"
-
-$("#button-const").on "click", ->
-  actionRouter.addFunc defaultFuncPos, ((_) -> 1), 1, "const"
 
 $("#button-alloc").on "click", ->
   actionRouter.addAllocFunc defaultFuncPos

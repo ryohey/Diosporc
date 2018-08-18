@@ -45,6 +45,13 @@ class ActionRouter
     f = new AllocFunc @machine, @
     @addFunc_ f, pos, "alloc"
 
+  addLinks: (ids) =>
+    prev = null
+    for id in ids
+      if prev?
+        @addLink prev, id
+      prev = id
+
   addLink: (fromPortId, toPortId) ->
     fromPort = @machine.ports[fromPortId]
     toPort = @machine.ports[toPortId]
