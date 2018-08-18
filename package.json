@@ -6,7 +6,8 @@
   "scripts": {
     "start": "browser-sync start --server --files \"*.js,*.css,index.html\"",
     "compile": "browserify --debug -t coffeeify coffee/main.coffee > main.js",
-    "watch": "nodemon --watch coffee/*.coffee --ext coffee --exec \"npm run compile\""
+    "watch": "nodemon --watch coffee/*.coffee --ext coffee --exec \"npm run compile\"",
+    "deploy": "npm run compile && shx rm -rf docs && shx mkdir docs && shx cp -r js docs/js && shx cp -r files docs/ && shx cp main.js docs/ && shx cp index.html docs/ && shx cp style.css docs/"
   },
   "author": "ryohey",
   "license": "MIT",
@@ -17,6 +18,7 @@
     "browser-sync": "^2.10.1",
     "browserify": "^12.0.1",
     "coffeeify": "^2.0.1",
-    "nodemon": "^1.8.1"
+    "nodemon": "^1.8.1",
+    "shx": "^0.3.2"
   }
 }
