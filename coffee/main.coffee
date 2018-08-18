@@ -109,7 +109,7 @@ getJSONSync = (url) ->
   result
 
 addFunc = (json) ->   
-  for n in json.nodes
+  if json.nodes then for n in json.nodes
     if n.script?
       f = new Function n.script[0], n.script[1]
       f = actionRouter.addFunc n.position, f, 1, n.name
@@ -119,7 +119,7 @@ addFunc = (json) ->
     else if n.value?
       actionRouter.addPort pos, defaultFuncPos
 
-  for e in json.edges
+  if json.edges then for e in json.edges
     actionRouter.addLinks e
 
 $("#button-plus").on "click", ->
