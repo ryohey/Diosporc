@@ -1,0 +1,51 @@
+@charset="utf-8";
+
+body {
+  font-family: "Consolas";
+  font-size: 85%;
+  background: rgb(245, 244, 244);
+  -webkit-font-smoothing: antialiased;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+}
+
+p {
+  margin: 0;
+}
+
+body {
+  margin: 0;
+}
+
+.button {
+  border: 1px solid transparent;
+  border-radius: 2px;
+  color: white;
+  background: gray;
+  padding: 0.25em 0.5em;
+  font-size: 1.2em;
+  cursor: pointer;
+}
+
+.button:hover {
+  opacity: 0.5;
+}
+
+canvas#canvas {
+}
+
+div#machine {
+}
+
+div#toolbar {
+    clear: both;
+    overflow: hidden;
+    padding: 1em;
+    background: #E4E4E4;
+}
+
+.button.control {
+  background: transparent;
+  border-color: #808080;
+  color: rgb(128, 128, 128);
+}
