@@ -1,5 +1,7 @@
 # Diosporc
 
+![screenshot](https://user-images.githubusercontent.com/5355966/44294839-6d964380-a2d8-11e8-86ff-5972fa4fcf72.png)
+
 ## Controls
 
 - Click on the canvas: Create the memory block
