@@ -29,15 +29,17 @@ class FuncView extends createjs.Container
       @addChild v
 
     @dragged = false
+    mouseButton = 0
 
     @on "mousedown", (e) =>
       @dragged = false
-      return if e.nativeEvent.button isnt 0
+      mouseButton = e.nativeEvent.button
+      return if mouseButton isnt 0
       @offset = new createjs.Point @x - e.stageX, @y - e.stageY
 
     @on "pressmove", (e) =>
       @dragged = true
-      return if e.nativeEvent.button isnt 0
+      return if mouseButton isnt 0
       @x = e.stageX + @offset.x
       @y = e.stageY + @offset.y
 

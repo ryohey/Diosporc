@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "browser-sync start --server --files \"*.js,*.css,index.html\"",
-    "compile": "browserify -t coffeeify coffee/main.coffee > main.js",
+    "compile": "browserify --debug -t coffeeify coffee/main.coffee > main.js",
     "watch": "nodemon --watch coffee/*.coffee --ext coffee --exec \"npm run compile\""
   },
   "author": "ryohey",

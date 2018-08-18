@@ -28,17 +28,19 @@ class PortView extends createjs.Container
     @port.on "change", @onChange
 
     @uiEnabled = true
+    mouseButton = 0
 
     @on "mousedown", (e) =>
       return unless @uiEnabled
       @dragged = false
-      return if e.nativeEvent.button isnt 0
+      mouseButton = e.nativeEvent.button
+      return if mouseButton isnt 0
       @offset = new createjs.Point @x - e.stageX, @y - e.stageY
 
     @on "pressmove", (e) =>
       return unless @uiEnabled
       @dragged = true
-      return if e.nativeEvent.button isnt 0
+      return if mouseButton isnt 0
       @x = e.stageX + @offset.x
       @y = e.stageY + @offset.y
 
